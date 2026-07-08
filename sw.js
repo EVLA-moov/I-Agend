@@ -1,11 +1,12 @@
 /* IRIS — service worker: deja la app disponible sin conexión */
-const CACHE = "iris-v1";
+const CACHE = "iris-v2";
 const ARCHIVOS = [
   ".",
   "index.html",
   "css/styles.css",
   "js/app.js",
   "js/notes.js",
+  "js/ai.js",
   "manifest.webmanifest",
   "icons/icon.svg",
   "icons/icon-192.png",

@@ -250,7 +250,25 @@ function terminarTrazo(ev) {
 canvas.addEventListener("pointerup", terminarTrazo);
 canvas.addEventListener("pointercancel", terminarTrazo);
 
+// Caché de imágenes insertadas (dataURL → Image)
+const cacheImagenes = new Map();
+function imagenDe(dataUrl) {
+  let img = cacheImagenes.get(dataUrl);
+  if (!img) {
+    img = new Image();
+    img.src = dataUrl;
+    img.onload = () => redibujar();
+    cacheImagenes.set(dataUrl, img);
+  }
+  return img;
+}
+
 function dibujarTrazo(c, t) {
+  if (t.tool === "image") {
+    const img = imagenDe(t.dataUrl);
+    if (img.complete && img.naturalWidth) c.drawImage(img, t.x, t.y, t.w, t.h);
+    return;
+  }
   const pts = t.puntos;
   if (pts.length < 2) return;
 
@@ -296,3 +314,36 @@ function redibujar() {
 setInterval(() => {
   if (!editor.classList.contains("hidden")) guardarNota();
 }, 20000);
+
+// ---------- API para el módulo de IA (js/ai.js) ----------
+window.notasAPI = {
+  editorAbierto: () => !editor.classList.contains("hidden"),
+  hayTrazos: () => trazos.length > 0,
+  // PNG del lienzo actual (incluye fondo blanco)
+  exportarPNG() {
+    return canvas.toDataURL("image/png");
+  },
+  // Inserta una imagen generada como elemento de la nota, centrada
+  insertarImagen(dataUrl) {
+    const img = imagenDe(dataUrl);
+    const colocar = () => {
+      const rect = canvas.getBoundingClientRect();
+      const maxW = rect.width * 0.6;
+      const escala = Math.min(maxW / img.naturalWidth, 1);
+      const w = img.naturalWidth * escala;
+      const h = img.naturalHeight * escala;
+      trazos.push({
+        tool: "image",
+        dataUrl,
+        x: (rect.width - w) / 2,
+        y: Math.max(20, (rect.height - h) / 2),
+        w, h
+      });
+      rehacer = [];
+      redibujar();
+      guardarNota();
+    };
+    if (img.complete && img.naturalWidth) colocar();
+    else img.addEventListener("load", colocar, { once: true });
+  }
+};

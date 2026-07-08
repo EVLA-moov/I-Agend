@@ -364,6 +364,16 @@ document.getElementById("form-item").addEventListener("submit", ev => {
   render();
 });
 
+// Crea tareas desde texto reconocido por la IA (una por línea)
+window.crearTareasDesdeTexto = function (lineas) {
+  lineas.forEach(titulo => {
+    tareas.push({ id: uid(), titulo, fecha: "", hora: "", prioridad: 0, recordar: false, notas: "", hecha: false, avisada: false });
+  });
+  guardarTareas();
+  mostrarToast(`✓ ${lineas.length} tarea${lineas.length > 1 ? "s" : ""} creada${lineas.length > 1 ? "s" : ""}`);
+  render();
+};
+
 // ---------- Recordatorios ----------
 function pedirPermisoNotificaciones() {
   if ("Notification" in window && Notification.permission === "default") {

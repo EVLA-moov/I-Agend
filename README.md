@@ -18,6 +18,15 @@ HTML, CSS y JavaScript puros.
   deshacer/rehacer y modo "Solo Pencil" (rechazo de palma). Las notas se
   guardan como trazos vectoriales en IndexedDB con miniatura automática.
 - **Offline**: el service worker deja la app disponible sin conexión.
+- **IA (v2, modelo BYOK)**: en Ajustes (⚙️) cada usuario pega su propia clave de
+  la API de Google Gemini (gratuita, de [aistudio.google.com/apikey](https://aistudio.google.com/apikey)).
+  La clave se guarda solo en el dispositivo — nunca en el código ni en el repositorio.
+  Con ella, el editor de notas ofrece:
+  - **✨ Texto**: convierte la escritura a mano en texto digital; puedes copiarlo
+    o crear una tarea por cada línea reconocida.
+  - **🎨 Imagen**: convierte el boceto en una imagen terminada (estilo Noema
+    Playground), con opción de describir el estilo, descargarla o insertarla
+    en la nota.
 
 ## Probar en la PC
 
@@ -45,6 +54,7 @@ index.html            Estructura de la app (vistas, editor, modal)
 css/styles.css        Estilos, tema claro/oscuro automático
 js/app.js             Tareas, eventos, calendario, recordatorios
 js/notes.js           Notas de escritura a mano (canvas + IndexedDB)
+js/ai.js              Funciones de IA (Gemini, clave BYOK en el dispositivo)
 sw.js                 Service worker (modo offline)
 manifest.webmanifest  Manifiesto PWA
 icons/                Íconos (SVG + PNG para iOS)
@@ -58,7 +68,6 @@ notas en `IndexedDB`. No hay servidor ni cuenta.
 
 ## Próximos pasos posibles
 
-- IA: convertir escritura a mano en texto y generar imágenes desde bocetos
-  (requiere clave de API de un proveedor como Anthropic/OpenAI/Gemini).
 - Notificaciones push reales (requiere servidor; iOS 16.4+).
 - Repetición de tareas y hábitos.
+- Resumir notas y crear tareas con lenguaje natural usando IA.

@@ -27,7 +27,10 @@
       <h1 id="view-title">Hoy</h1>
       <p id="header-date"></p>
     </div>
-    <button id="btn-header-add" class="btn-fab" aria-label="Agregar">＋</button>
+    <div class="header-actions">
+      <button id="btn-ajustes" class="btn-ghost btn-gear" aria-label="Ajustes">⚙️</button>
+      <button id="btn-header-add" class="btn-fab" aria-label="Agregar">＋</button>
+    </div>
   </header>
 
   <!-- ============ VISTA: HOY ============ -->
@@ -96,6 +99,8 @@
         <button id="ed-redo" class="btn-ghost" title="Rehacer">↪︎</button>
         <button id="ed-clear" class="btn-ghost" title="Limpiar todo">🗑️</button>
         <label class="solo-pencil"><input type="checkbox" id="ed-solo-pencil"> Solo Pencil</label>
+        <button id="ed-ia-texto" class="btn-ia" title="Convertir escritura a texto">✨ Texto</button>
+        <button id="ed-ia-imagen" class="btn-ia" title="Generar imagen desde el boceto">🎨 Imagen</button>
       </div>
     </div>
     <canvas id="ed-canvas"></canvas>
@@ -134,6 +139,56 @@
     </div>
   </div>
 
+  <!-- ============ MODAL: AJUSTES ============ -->
+  <div id="modal-ajustes" class="modal hidden">
+    <div class="modal-box">
+      <h2 class="modal-title">⚙️ Ajustes</h2>
+      <p class="ajustes-desc">
+        Las funciones de IA (escritura a texto y generación de imágenes) usan tu propia
+        clave de la API de <strong>Google Gemini</strong>. Es gratuita: créala en
+        <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>.
+        Tu clave se guarda únicamente en este dispositivo.
+      </p>
+      <input type="password" id="aj-clave" placeholder="Pega aquí tu clave de API (AIza…)" autocomplete="off">
+      <p id="aj-estado" class="ajustes-estado"></p>
+      <div class="modal-actions">
+        <button type="button" id="aj-probar" class="btn-ghost">Probar conexión</button>
+        <button type="button" id="aj-guardar" class="btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: RESULTADO DE TEXTO (IA) ============ -->
+  <div id="modal-ia-texto" class="modal hidden">
+    <div class="modal-box">
+      <h2 class="modal-title">✨ Texto reconocido</h2>
+      <p id="ia-texto-estado" class="ajustes-estado"></p>
+      <textarea id="ia-texto-resultado" rows="7" class="hidden"></textarea>
+      <div class="modal-actions">
+        <button type="button" id="ia-texto-cerrar" class="btn-ghost">Cerrar</button>
+        <button type="button" id="ia-texto-copiar" class="btn-ghost hidden">Copiar</button>
+        <button type="button" id="ia-texto-tareas" class="btn-primary hidden">Crear tareas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: GENERAR IMAGEN (IA) ============ -->
+  <div id="modal-ia-imagen" class="modal hidden">
+    <div class="modal-box">
+      <h2 class="modal-title">🎨 Generar imagen desde el boceto</h2>
+      <textarea id="ia-img-prompt" rows="2"
+        placeholder="Describe el estilo o resultado deseado (ej. 'ilustración digital colorida y profesional')"></textarea>
+      <p id="ia-img-estado" class="ajustes-estado"></p>
+      <img id="ia-img-resultado" class="ia-img-preview hidden" alt="Imagen generada">
+      <div class="modal-actions">
+        <button type="button" id="ia-img-cerrar" class="btn-ghost">Cerrar</button>
+        <button type="button" id="ia-img-generar" class="btn-primary">Generar</button>
+        <a id="ia-img-descargar" class="btn-ghost hidden" download="iris-imagen.png">Descargar</a>
+        <button type="button" id="ia-img-insertar" class="btn-primary hidden">Insertar en la nota</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ AVISO RECORDATORIO (in-app) ============ -->
   <div id="toast" class="toast hidden"></div>
 
@@ -147,5 +202,6 @@
 
   <script src="js/app.js"></script>
   <script src="js/notes.js"></script>
+  <script src="js/ai.js"></script>
 </body>
 </html>
