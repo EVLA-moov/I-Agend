@@ -21,6 +21,34 @@
 </head>
 <body>
 
+  <!-- ============ BIBLIOTECA DE ÍCONOS (SVG de línea) ============ -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+    <symbol id="i-sol" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-calendario" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-nota" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-engrane" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></symbol>
+    <symbol id="i-pluma" viewBox="0 0 24 24"><path d="m12 19 7-7 3 3-7 7-3-3z"/><path d="m18 13-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="m2 2 7.6 7.6"/><circle cx="11" cy="11" r="2"/></symbol>
+    <symbol id="i-boligrafo" viewBox="0 0 24 24"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-lapiz" viewBox="0 0 24 24"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></symbol>
+    <symbol id="i-pincel" viewBox="0 0 24 24"><path d="m9.06 11.9 8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/></symbol>
+    <symbol id="i-caligrafia" viewBox="0 0 24 24"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><path d="M16 8 2 22"/><path d="M17.5 15H9"/></symbol>
+    <symbol id="i-crayola" viewBox="0 0 24 24"><path d="M9 21V9a3 3 0 0 1 1.2-2.4L12 3l1.8 3.6A3 3 0 0 1 15 9v12"/><path d="M7 21h10"/></symbol>
+    <symbol id="i-aerosol" viewBox="0 0 24 24"><rect x="8" y="8" width="8" height="13" rx="1.5"/><path d="M10 8V6h4v2M12 6V4"/><path d="M17.5 4h.01M20.5 6h.01M18 9h.01M21 10h.01"/></symbol>
+    <symbol id="i-neon" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></symbol>
+    <symbol id="i-punteada" viewBox="0 0 24 24"><path d="M3 12h2.5M9 12h2.5M15 12h2.5M21 12h.01"/></symbol>
+    <symbol id="i-subrayador" viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4Z"/></symbol>
+    <symbol id="i-borrador" viewBox="0 0 24 24"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></symbol>
+    <symbol id="i-deshacer" viewBox="0 0 24 24"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></symbol>
+    <symbol id="i-rehacer" viewBox="0 0 24 24"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 15-6.7L21 13"/></symbol>
+    <symbol id="i-basura" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></symbol>
+    <symbol id="i-campana" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+    <symbol id="i-lista" viewBox="0 0 24 24"><path d="M3 6h.01M8 6h13M3 12h.01M8 12h13M3 18h.01M8 18h13"/></symbol>
+    <symbol id="i-alerta" viewBox="0 0 24 24"><path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4M12 17h.01"/></symbol>
+    <symbol id="i-chispa" viewBox="0 0 24 24"><path d="M9.9 2.9 11.5 7l4.1 1.6-4.1 1.6-1.6 4.1-1.6-4.1L4.2 8.6l4.1-1.6Z"/><path d="m18 14 .9 2.3L21 17l-2.1.8L18 20l-.8-2.2L15 17l2.2-.7Z"/></symbol>
+    <symbol id="i-imagen" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.8-3.8a2 2 0 0 0-2.8 0L6 20"/></symbol>
+  </svg>
+
   <!-- ============ CABECERA ============ -->
   <header class="app-header">
     <div class="header-title">
@@ -28,7 +56,7 @@
       <p id="header-date"></p>
     </div>
     <div class="header-actions">
-      <button id="btn-ajustes" class="btn-ghost btn-gear" aria-label="Ajustes">⚙️</button>
+      <button id="btn-ajustes" class="btn-ghost btn-gear" aria-label="Ajustes"><svg class="icn"><use href="#i-engrane"/></svg></button>
       <button id="btn-header-add" class="btn-fab" aria-label="Agregar">＋</button>
     </div>
   </header>
@@ -93,25 +121,25 @@
       <button id="ed-volver" class="btn-ghost">‹ Volver</button>
       <input type="text" id="ed-titulo" placeholder="Título de la nota">
       <div class="toolbar-tools">
-        <button class="tool active" data-tool="pen" title="Pluma">✒️</button>
-        <button class="tool" data-tool="ballpoint" title="Bolígrafo">🖊️</button>
-        <button class="tool" data-tool="pencil" title="Lápiz">✏️</button>
-        <button class="tool" data-tool="brush" title="Pincel">🖌️</button>
-        <button class="tool" data-tool="calligraphy" title="Caligrafía">🖋️</button>
-        <button class="tool" data-tool="crayon" title="Crayola">🖍️</button>
-        <button class="tool" data-tool="spray" title="Aerosol">💨</button>
-        <button class="tool" data-tool="neon" title="Neón">🌟</button>
-        <button class="tool" data-tool="dashed" title="Línea punteada">➖</button>
-        <button class="tool" data-tool="marker" title="Subrayador">🟨</button>
-        <button class="tool" data-tool="eraser" title="Borrador">🧽</button>
+        <button class="tool active" data-tool="pen" title="Pluma"><svg class="icn"><use href="#i-pluma"/></svg></button>
+        <button class="tool" data-tool="ballpoint" title="Bolígrafo"><svg class="icn"><use href="#i-boligrafo"/></svg></button>
+        <button class="tool" data-tool="pencil" title="Lápiz"><svg class="icn"><use href="#i-lapiz"/></svg></button>
+        <button class="tool" data-tool="brush" title="Pincel"><svg class="icn"><use href="#i-pincel"/></svg></button>
+        <button class="tool" data-tool="calligraphy" title="Caligrafía"><svg class="icn"><use href="#i-caligrafia"/></svg></button>
+        <button class="tool" data-tool="crayon" title="Crayola"><svg class="icn"><use href="#i-crayola"/></svg></button>
+        <button class="tool" data-tool="spray" title="Aerosol"><svg class="icn"><use href="#i-aerosol"/></svg></button>
+        <button class="tool" data-tool="neon" title="Neón"><svg class="icn"><use href="#i-neon"/></svg></button>
+        <button class="tool" data-tool="dashed" title="Línea punteada"><svg class="icn"><use href="#i-punteada"/></svg></button>
+        <button class="tool" data-tool="marker" title="Subrayador"><svg class="icn"><use href="#i-subrayador"/></svg></button>
+        <button class="tool" data-tool="eraser" title="Borrador"><svg class="icn"><use href="#i-borrador"/></svg></button>
         <input type="color" id="ed-color" value="#1a1a2e" title="Color">
         <input type="range" id="ed-grosor" min="1" max="24" value="3" title="Grosor">
-        <button id="ed-undo" class="btn-ghost" title="Deshacer">↩︎</button>
-        <button id="ed-redo" class="btn-ghost" title="Rehacer">↪︎</button>
-        <button id="ed-clear" class="btn-ghost" title="Limpiar todo">🗑️</button>
+        <button id="ed-undo" class="btn-ghost" title="Deshacer"><svg class="icn"><use href="#i-deshacer"/></svg></button>
+        <button id="ed-redo" class="btn-ghost" title="Rehacer"><svg class="icn"><use href="#i-rehacer"/></svg></button>
+        <button id="ed-clear" class="btn-ghost" title="Limpiar todo"><svg class="icn"><use href="#i-basura"/></svg></button>
         <label class="solo-pencil"><input type="checkbox" id="ed-solo-pencil"> Solo Pencil</label>
-        <button id="ed-ia-texto" class="btn-ia" title="Convertir escritura a texto">✨ Texto</button>
-        <button id="ed-ia-imagen" class="btn-ia" title="Generar imagen desde el boceto">🎨 Imagen</button>
+        <button id="ed-ia-texto" class="btn-ia" title="Convertir escritura a texto"><svg class="icn"><use href="#i-chispa"/></svg> Texto</button>
+        <button id="ed-ia-imagen" class="btn-ia" title="Generar imagen desde el boceto"><svg class="icn"><use href="#i-imagen"/></svg> Imagen</button>
       </div>
     </div>
     <canvas id="ed-canvas"></canvas>
@@ -156,7 +184,7 @@
   <!-- ============ MODAL: AJUSTES ============ -->
   <div id="modal-ajustes" class="modal hidden">
     <div class="modal-box">
-      <h2 class="modal-title">⚙️ Ajustes</h2>
+      <h2 class="modal-title"><svg class="icn"><use href="#i-engrane"/></svg> Ajustes</h2>
       <p class="ajustes-desc">
         Las funciones de IA (escritura a texto y generación de imágenes) usan tu propia
         clave de la API de <strong>Google Gemini</strong>. Es gratuita: créala en
@@ -175,7 +203,7 @@
   <!-- ============ MODAL: RESULTADO DE TEXTO (IA) ============ -->
   <div id="modal-ia-texto" class="modal hidden">
     <div class="modal-box">
-      <h2 class="modal-title">✨ Texto reconocido</h2>
+      <h2 class="modal-title"><svg class="icn"><use href="#i-chispa"/></svg> Texto reconocido</h2>
       <p id="ia-texto-estado" class="ajustes-estado"></p>
       <textarea id="ia-texto-resultado" rows="7" class="hidden"></textarea>
       <div class="modal-actions">
@@ -189,7 +217,7 @@
   <!-- ============ MODAL: GENERAR IMAGEN (IA) ============ -->
   <div id="modal-ia-imagen" class="modal hidden">
     <div class="modal-box">
-      <h2 class="modal-title">🎨 Generar imagen desde el boceto</h2>
+      <h2 class="modal-title"><svg class="icn"><use href="#i-imagen"/></svg> Generar imagen desde el boceto</h2>
       <textarea id="ia-img-prompt" rows="2"
         placeholder="Describe el estilo o resultado deseado (ej. 'ilustración digital colorida y profesional')"></textarea>
       <p id="ia-img-estado" class="ajustes-estado"></p>
@@ -208,10 +236,10 @@
 
   <!-- ============ BARRA DE PESTAÑAS ============ -->
   <nav class="tabbar">
-    <button class="tab active" data-view="hoy"><span class="tab-icon">☀️</span>Hoy</button>
-    <button class="tab" data-view="calendario"><span class="tab-icon">📅</span>Calendario</button>
-    <button class="tab" data-view="tareas"><span class="tab-icon">✓</span>Tareas</button>
-    <button class="tab" data-view="notas"><span class="tab-icon">✍️</span>Notas</button>
+    <button class="tab active" data-view="hoy"><svg class="icn tab-icon"><use href="#i-sol"/></svg>Hoy</button>
+    <button class="tab" data-view="calendario"><svg class="icn tab-icon"><use href="#i-calendario"/></svg>Calendario</button>
+    <button class="tab" data-view="tareas"><svg class="icn tab-icon"><use href="#i-check"/></svg>Tareas</button>
+    <button class="tab" data-view="notas"><svg class="icn tab-icon"><use href="#i-nota"/></svg>Notas</button>
   </nav>
 
   <script src="js/app.js"></script>

@@ -85,7 +85,7 @@ async function renderNotas() {
 
     const del = document.createElement("button");
     del.className = "note-del";
-    del.textContent = "🗑 Eliminar";
+    del.append(window.icono("basura"), " Eliminar");
     del.addEventListener("click", async ev => {
       ev.stopPropagation();
       await dbBorrar(nota.id);

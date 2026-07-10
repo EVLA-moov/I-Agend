@@ -20,6 +20,16 @@ const guardarListas = () => store.set("iris.listas", listas);
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+// Crea un ícono SVG de la biblioteca de símbolos (#i-<nombre> en index.html)
+window.icono = function (nombre) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "icn");
+  const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+  use.setAttribute("href", "#i-" + nombre);
+  svg.appendChild(use);
+  return svg;
+};
+
 // ---------- Fechas ----------
 const hoyISO = () => {
   const d = new Date();
@@ -65,7 +75,7 @@ function render() {
 function renderHoy() {
   const h = new Date().getHours();
   const saludo = h < 12 ? "Buenos días" : h < 19 ? "Buenas tardes" : "Buenas noches";
-  document.getElementById("saludo").textContent = `${saludo} 👋`;
+  document.getElementById("saludo").textContent = saludo;
 
   const hoy = hoyISO();
   const tHoy = tareas.filter(t => t.fecha === hoy && !t.hecha);
@@ -81,7 +91,7 @@ function renderHoy() {
   const contT = document.getElementById("hoy-tareas");
   const pendientesHoy = [...tVencidas, ...tHoy].sort(ordenTareas);
   contT.innerHTML = "";
-  if (!pendientesHoy.length) contT.innerHTML = `<p class="empty">Nada pendiente por hoy 🎉</p>`;
+  if (!pendientesHoy.length) contT.innerHTML = `<p class="empty">Todo en orden por hoy</p>`;
   pendientesHoy.forEach(t => contT.appendChild(elTarea(t)));
 
   const contE = document.getElementById("hoy-eventos");
@@ -125,19 +135,20 @@ function elTarea(t) {
     const chip = document.createElement("span");
     const vencida = !t.hecha && t.fecha < hoyISO();
     chip.className = "meta-chip" + (vencida ? " overdue" : "");
-    chip.textContent = (vencida ? "⚠ " : "📅 ") + fmtFechaCorta(t.fecha) + (t.hora ? ` · ${t.hora}` : "");
+    chip.append(icono(vencida ? "alerta" : "calendario"),
+      " " + fmtFechaCorta(t.fecha) + (t.hora ? ` · ${t.hora}` : ""));
     meta.appendChild(chip);
   }
   if (t.recordar && t.hora) {
     const chip = document.createElement("span");
     chip.className = "meta-chip bell";
-    chip.textContent = "🔔";
+    chip.appendChild(icono("campana"));
     meta.appendChild(chip);
   }
   if (t.lista) {
     const chip = document.createElement("span");
     chip.className = "meta-chip";
-    chip.textContent = "📋 " + t.lista;
+    chip.append(icono("lista"), " " + t.lista);
     meta.appendChild(chip);
   }
   if (t.notas) {
@@ -233,11 +244,12 @@ function renderListas() {
   const pendientesDe = nombre =>
     tareas.filter(t => !t.hecha && (nombre === "todas" ? true : t.lista === nombre)).length;
 
-  const chipDe = (nombre, etiqueta) => {
+  const chipDe = (nombre, etiqueta, icn) => {
     const chip = document.createElement("button");
     chip.className = "chip" + (listaSel === nombre ? " active" : "");
     const n = pendientesDe(nombre);
-    chip.textContent = etiqueta + (n ? ` (${n})` : "");
+    if (icn) chip.appendChild(icono(icn));
+    chip.append(etiqueta + (n ? ` (${n})` : ""));
     chip.addEventListener("click", () => {
       listaSel = nombre;
       renderTareas();
@@ -246,13 +258,13 @@ function renderListas() {
   };
 
   row.appendChild(chipDe("todas", "Todas"));
-  listas.forEach(nombre => row.appendChild(chipDe(nombre, "📋 " + nombre)));
+  listas.forEach(nombre => row.appendChild(chipDe(nombre, nombre, "lista")));
 
   // Eliminar la lista activa
   if (listaSel !== "todas") {
     const del = document.createElement("button");
     del.className = "chip chip-danger";
-    del.textContent = "🗑 Eliminar lista";
+    del.append(icono("basura"), " Eliminar lista");
     del.addEventListener("click", () => {
       if (!confirm(`¿Eliminar la lista "${listaSel}"? Sus tareas se conservan sin lista.`)) return;
       tareas.forEach(t => { if (t.lista === listaSel) t.lista = ""; });
@@ -479,7 +491,7 @@ function mostrarToast(msg) {
 }
 
 function notificar(titulo, cuerpo) {
-  mostrarToast(`🔔 ${titulo}${cuerpo ? " — " + cuerpo : ""}`);
+  mostrarToast(`${titulo}${cuerpo ? " — " + cuerpo : ""}`);
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   // En la app instalada de iOS, new Notification() no existe: hay que usar el SW
   if ("serviceWorker" in navigator) {
