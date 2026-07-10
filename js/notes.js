@@ -337,6 +337,10 @@ function dibujarTrazo(c, t) {
       trazarRuta(c, pts, t.size * 2.5);
       break;
 
+    case "ballpoint": // bolígrafo: línea delgada y uniforme
+      trazarRuta(c, pts, Math.max(1, t.size * 0.55));
+      break;
+
     case "pencil": { // lápiz: fino, grafito tenue con doble pasada irregular
       const anchoLapiz = t.size * 0.7 * presionMedia(pts) * 1.6;
       c.globalAlpha = 0.55;
@@ -346,24 +350,59 @@ function dibujarTrazo(c, t) {
       break;
     }
 
-    case "brush": { // pincel: cuerpo suave ancho + centro cargado de tinta
-      c.globalAlpha = 0.4;
-      trazarRuta(c, pts, t.size * 2.4 * Math.pow(presionMedia(pts), 1.5) * 1.8);
-      c.globalAlpha = 1;
-      trazarSegmentos(c, pts, (p0, p1) => t.size * 1.1 * Math.pow(presion(p0, p1), 1.5) * 1.8);
+    case "brush": { // pincel: una sola pasada opaca, ancha, con puntas afiladas
+      const n = pts.length;
+      const afilar = i => Math.min(1, (i + 1) / 5, (n - i) / 5);
+      let i = 0;
+      trazarSegmentos(c, pts, (p0, p1) => {
+        const w = t.size * 2 * Math.pow(presion(p0, p1), 1.3) * 1.8 * afilar(i);
+        i++;
+        return w;
+      });
       break;
     }
 
-    case "crayon": { // crayola: varias pasadas cerosas desalineadas
-      const amplitud = t.size * 0.45;
-      const anchoCera = t.size * 1.2 * (0.8 + presionMedia(pts) * 0.6);
-      for (let pasada = 0; pasada < 3; pasada++) {
-        c.globalAlpha = 0.3;
-        trazarRuta(c, pts, anchoCera,
-          (rng() - 0.5) * 2 * amplitud, (rng() - 0.5) * 2 * amplitud);
-      }
+    case "calligraphy": { // caligrafía: plumilla plana a 45°, opaca
+      trazarSegmentos(c, pts, (p0, p1) => {
+        const ang = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+        return t.size * 1.8 * (0.25 + Math.abs(Math.sin(ang - Math.PI / 4)) * 1.3);
+      });
       break;
     }
+
+    case "crayon": { // crayola: cuerpo ceroso uniforme + grano en los bordes
+      const anchoCera = t.size * 1.4 * (0.8 + presionMedia(pts) * 0.6);
+      c.globalAlpha = 0.8;
+      trazarRuta(c, pts, anchoCera);
+      c.globalAlpha = 0.22;
+      pts.forEach(p => {
+        for (let k = 0; k < 3; k++) {
+          const ang = rng() * Math.PI * 2;
+          const dist = (0.3 + rng() * 0.55) * anchoCera;
+          c.beginPath();
+          c.arc(p.x + Math.cos(ang) * dist, p.y + Math.sin(ang) * dist,
+            0.6 + rng() * 1.2, 0, Math.PI * 2);
+          c.fill();
+        }
+      });
+      break;
+    }
+
+    case "neon": { // neón: halo brillante del color + núcleo claro (a propósito)
+      const anchoNeon = t.size * 1.4 * (0.7 + presionMedia(pts) * 0.6);
+      c.shadowColor = t.color;
+      c.shadowBlur = t.size * 3;
+      trazarRuta(c, pts, anchoNeon);
+      c.shadowBlur = 0;
+      c.strokeStyle = "rgba(255,255,255,0.85)";
+      trazarRuta(c, pts, anchoNeon * 0.45);
+      break;
+    }
+
+    case "dashed": // línea punteada: guiones redondeados uniformes
+      c.setLineDash([t.size * 2.5, t.size * 2.2]);
+      trazarRuta(c, pts, t.size * (0.6 + presionMedia(pts) * 0.8));
+      break;
 
     case "spray": { // aerosol: nube de puntos alrededor del recorrido
       c.globalAlpha = 0.28;
