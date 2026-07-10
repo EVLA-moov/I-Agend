@@ -223,6 +223,7 @@ canvas.addEventListener("pointerdown", ev => {
     tool: herramienta,
     color: document.getElementById("ed-color").value,
     size: Number(document.getElementById("ed-grosor").value),
+    seed: (Math.random() * 2 ** 31) | 0,
     puntos: [puntoDesdeEvento(ev)]
   };
 });
@@ -263,6 +264,50 @@ function imagenDe(dataUrl) {
   return img;
 }
 
+// Generador pseudoaleatorio con semilla (mulberry32): el ruido de lápiz,
+// crayola y aerosol debe verse idéntico cada vez que se redibuja el trazo
+function rngDe(semilla) {
+  let a = semilla >>> 0;
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Dibuja los segmentos suavizados de un trazo; anchoDe(p0, p1) da el grosor.
+// Solo para trazos opacos: con transparencia los traslapes se ven como cuentas.
+function trazarSegmentos(c, pts, anchoDe, dx = 0, dy = 0) {
+  for (let i = 1; i < pts.length; i++) {
+    const p0 = pts[i - 1], p1 = pts[i];
+    c.beginPath();
+    c.lineWidth = Math.max(0.5, anchoDe(p0, p1));
+    const mx = (p0.x + p1.x) / 2 + dx, my = (p0.y + p1.y) / 2 + dy;
+    c.moveTo(p0.x + dx, p0.y + dy);
+    c.quadraticCurveTo(p0.x + dx, p0.y + dy, mx, my);
+    c.lineTo(p1.x + dx, p1.y + dy);
+    c.stroke();
+  }
+}
+
+// Dibuja el trazo completo como UNA sola ruta con grosor constante:
+// necesario para herramientas semitransparentes (sin traslapes visibles)
+function trazarRuta(c, pts, ancho, dx = 0, dy = 0) {
+  c.beginPath();
+  c.lineWidth = Math.max(0.5, ancho);
+  c.moveTo(pts[0].x + dx, pts[0].y + dy);
+  for (let i = 1; i < pts.length; i++) {
+    const p0 = pts[i - 1], p1 = pts[i];
+    c.quadraticCurveTo(p0.x + dx, p0.y + dy, (p0.x + p1.x) / 2 + dx, (p0.y + p1.y) / 2 + dy);
+  }
+  const fin = pts[pts.length - 1];
+  c.lineTo(fin.x + dx, fin.y + dy);
+  c.stroke();
+}
+
+const presionMedia = pts => pts.reduce((s, p) => s + p.p, 0) / pts.length;
+
 function dibujarTrazo(c, t) {
   if (t.tool === "image") {
     const img = imagenDe(t.dataUrl);
@@ -275,29 +320,70 @@ function dibujarTrazo(c, t) {
   c.save();
   c.lineCap = "round";
   c.lineJoin = "round";
+  c.strokeStyle = t.color;
+  c.fillStyle = t.color;
 
-  if (t.tool === "eraser") {
-    c.globalCompositeOperation = "destination-out";
-    c.strokeStyle = "rgba(0,0,0,1)";
-  } else if (t.tool === "marker") {
-    c.globalAlpha = 0.35;
-    c.strokeStyle = t.color;
-  } else {
-    c.strokeStyle = t.color;
-  }
+  const presion = (p0, p1) => (p0.p + p1.p) / 2;
+  const rng = rngDe(t.seed || 1);
 
-  const base = t.tool === "eraser" ? t.size * 3 : t.tool === "marker" ? t.size * 2.5 : t.size;
+  switch (t.tool) {
+    case "eraser":
+      c.globalCompositeOperation = "destination-out";
+      trazarSegmentos(c, pts, () => t.size * 3);
+      break;
 
-  // Segmentos con grosor variable según presión, suavizados con puntos medios
-  for (let i = 1; i < pts.length; i++) {
-    const p0 = pts[i - 1], p1 = pts[i];
-    c.beginPath();
-    c.lineWidth = Math.max(0.5, base * (t.tool === "marker" ? 1 : (p0.p + p1.p) / 2 * 1.6));
-    const mx = (p0.x + p1.x) / 2, my = (p0.y + p1.y) / 2;
-    c.moveTo(p0.x, p0.y);
-    c.quadraticCurveTo(p0.x, p0.y, mx, my);
-    c.lineTo(p1.x, p1.y);
-    c.stroke();
+    case "marker": // resaltador: ancho plano, semitransparente
+      c.globalAlpha = 0.35;
+      trazarRuta(c, pts, t.size * 2.5);
+      break;
+
+    case "pencil": { // lápiz: fino, grafito tenue con doble pasada irregular
+      const anchoLapiz = t.size * 0.7 * presionMedia(pts) * 1.6;
+      c.globalAlpha = 0.55;
+      trazarRuta(c, pts, anchoLapiz);
+      c.globalAlpha = 0.25;
+      trazarRuta(c, pts, anchoLapiz * 0.7, (rng() - 0.5) * 1.6, (rng() - 0.5) * 1.6);
+      break;
+    }
+
+    case "brush": { // pincel: cuerpo suave ancho + centro cargado de tinta
+      c.globalAlpha = 0.4;
+      trazarRuta(c, pts, t.size * 2.4 * Math.pow(presionMedia(pts), 1.5) * 1.8);
+      c.globalAlpha = 1;
+      trazarSegmentos(c, pts, (p0, p1) => t.size * 1.1 * Math.pow(presion(p0, p1), 1.5) * 1.8);
+      break;
+    }
+
+    case "crayon": { // crayola: varias pasadas cerosas desalineadas
+      const amplitud = t.size * 0.45;
+      const anchoCera = t.size * 1.2 * (0.8 + presionMedia(pts) * 0.6);
+      for (let pasada = 0; pasada < 3; pasada++) {
+        c.globalAlpha = 0.3;
+        trazarRuta(c, pts, anchoCera,
+          (rng() - 0.5) * 2 * amplitud, (rng() - 0.5) * 2 * amplitud);
+      }
+      break;
+    }
+
+    case "spray": { // aerosol: nube de puntos alrededor del recorrido
+      c.globalAlpha = 0.28;
+      const radio = t.size * 2.2;
+      pts.forEach(p => {
+        const n = 6 + Math.round(t.size * 1.5);
+        for (let k = 0; k < n; k++) {
+          const ang = rng() * Math.PI * 2;
+          const dist = Math.sqrt(rng()) * radio * (0.5 + p.p);
+          const r = 0.5 + rng() * Math.max(0.8, t.size * 0.12);
+          c.beginPath();
+          c.arc(p.x + Math.cos(ang) * dist, p.y + Math.sin(ang) * dist, r, 0, Math.PI * 2);
+          c.fill();
+        }
+      });
+      break;
+    }
+
+    default: // pluma: grosor sensible a la presión
+      trazarSegmentos(c, pts, (p0, p1) => t.size * presion(p0, p1) * 1.6);
   }
   c.restore();
 }

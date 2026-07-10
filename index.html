@@ -76,6 +76,9 @@
       <button class="chip" data-filter="completadas">Completadas</button>
     </div>
 
+    <h2 class="section-label">Mis listas</h2>
+    <div class="filter-row" id="listas-row"></div>
+
     <div id="lista-tareas" class="task-list"></div>
   </main>
 
@@ -91,8 +94,12 @@
       <input type="text" id="ed-titulo" placeholder="Título de la nota">
       <div class="toolbar-tools">
         <button class="tool active" data-tool="pen" title="Pluma">✒️</button>
-        <button class="tool" data-tool="marker" title="Resaltador">🖍️</button>
-        <button class="tool" data-tool="eraser" title="Borrador">⬜</button>
+        <button class="tool" data-tool="pencil" title="Lápiz">✏️</button>
+        <button class="tool" data-tool="brush" title="Pincel">🖌️</button>
+        <button class="tool" data-tool="crayon" title="Crayola">🖍️</button>
+        <button class="tool" data-tool="spray" title="Aerosol">💨</button>
+        <button class="tool" data-tool="marker" title="Resaltador">🟨</button>
+        <button class="tool" data-tool="eraser" title="Borrador">🧽</button>
         <input type="color" id="ed-color" value="#1a1a2e" title="Color">
         <input type="range" id="ed-grosor" min="1" max="24" value="3" title="Grosor">
         <button id="ed-undo" class="btn-ghost" title="Deshacer">↩︎</button>
@@ -127,6 +134,9 @@
               <option value="2">Media</option>
               <option value="3">Alta</option>
             </select>
+          </label>
+          <label>Lista
+            <select id="m-lista"></select>
           </label>
           <label class="check-recordar"><input type="checkbox" id="m-recordar"> Recordarme</label>
         </div>

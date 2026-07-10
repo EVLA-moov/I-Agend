@@ -123,6 +123,7 @@ body {
   cursor: pointer;
 }
 .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip-danger { color: var(--danger); border-color: var(--danger); }
 
 .task-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .task-item {

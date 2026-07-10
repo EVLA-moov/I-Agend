@@ -12,11 +12,21 @@ HTML, CSS y JavaScript puros.
 - **Tareas**: captura rápida con Enter, filtros (pendientes / hoy / próximas /
   completadas), prioridades con color y fechas de vencimiento.
 - **Recordatorios**: al crear una tarea o evento con hora y "Recordarme",
-  la app avisa con una notificación y un aviso en pantalla (con la app abierta).
+  la app avisa con una notificación del sistema (vía service worker, compatible
+  con la app instalada en iOS) y un aviso en pantalla. El ícono de la app
+  muestra un globito con el número de tareas vencidas o de hoy (iOS 16.4+).
+  Nota: iOS no permite notificaciones programadas con la app totalmente
+  cerrada sin un servidor de push; los avisos llegan con la app abierta o
+  al volver a ella.
 - **Notas**: lienzo de dibujo con soporte de Apple Pencil — presión,
-  puntos de alta frecuencia (coalesced events), pluma, resaltador, borrador,
-  deshacer/rehacer y modo "Solo Pencil" (rechazo de palma). Las notas se
-  guardan como trazos vectoriales en IndexedDB con miniatura automática.
+  puntos de alta frecuencia (coalesced events), deshacer/rehacer y modo
+  "Solo Pencil" (rechazo de palma). Siete estilos de trazo: pluma, lápiz,
+  pincel, crayola, aerosol, resaltador y borrador (los estilos con textura
+  usan ruido con semilla para redibujarse idénticos). Las notas se guardan
+  como trazos vectoriales en IndexedDB con miniatura automática.
+- **Listas de pendientes**: además de las tareas sueltas, puedes crear listas
+  con nombre (Compras, Escuela…) desde la vista Tareas; cada tarea puede
+  pertenecer a una lista y conservar fecha, prioridad y recordatorio.
 - **Offline**: el service worker deja la app disponible sin conexión.
 - **IA (v2, modelo BYOK)**: en Ajustes (⚙️) cada usuario pega su propia clave de
   la API de Google Gemini (gratuita, de [aistudio.google.com/apikey](https://aistudio.google.com/apikey)).

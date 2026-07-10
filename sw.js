@@ -1,5 +1,5 @@
 /* IRIS — service worker: deja la app disponible sin conexión */
-const CACHE = "iris-v2";
+const CACHE = "iris-v3";
 const ARCHIVOS = [
   ".",
   "index.html",
@@ -26,6 +26,16 @@ self.addEventListener("activate", ev => {
     )
   );
   self.clients.claim();
+});
+
+// Al tocar una notificación: enfocar la app o abrirla
+self.addEventListener("notificationclick", ev => {
+  ev.notification.close();
+  ev.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(lista =>
+      lista.length ? lista[0].focus() : clients.openWindow(".")
+    )
+  );
 });
 
 // Red primero, con respaldo en caché (así las actualizaciones llegan al instante)

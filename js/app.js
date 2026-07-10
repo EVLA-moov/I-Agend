@@ -10,11 +10,13 @@ const store = {
   set(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
 };
 
-let tareas = store.get("iris.tareas", []);   // {id, titulo, fecha, hora, prioridad, recordar, notas, hecha, avisada}
+let tareas = store.get("iris.tareas", []);   // {id, titulo, fecha, hora, prioridad, recordar, notas, hecha, avisada, lista}
 let eventos = store.get("iris.eventos", []); // {id, titulo, fecha, hora, recordar, notas, avisado}
+let listas = store.get("iris.listas", []);   // ["Compras", "Escuela", …]
 
 const guardarTareas = () => store.set("iris.tareas", tareas);
 const guardarEventos = () => store.set("iris.eventos", eventos);
+const guardarListas = () => store.set("iris.listas", listas);
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
@@ -56,6 +58,7 @@ function render() {
   if (vistaActual === "calendario") renderCalendario();
   if (vistaActual === "tareas") renderTareas();
   if (vistaActual === "notas" && window.renderNotas) window.renderNotas();
+  if (typeof actualizarBadge === "function") actualizarBadge();
 }
 
 // ---------- Vista Hoy ----------
@@ -131,6 +134,12 @@ function elTarea(t) {
     chip.textContent = "🔔";
     meta.appendChild(chip);
   }
+  if (t.lista) {
+    const chip = document.createElement("span");
+    chip.className = "meta-chip";
+    chip.textContent = "📋 " + t.lista;
+    meta.appendChild(chip);
+  }
   if (t.notas) {
     const chip = document.createElement("span");
     chip.className = "meta-chip";
@@ -190,6 +199,7 @@ function elEvento(e) {
 
 // ---------- Vista Tareas ----------
 let filtroTareas = "pendientes";
+let listaSel = "todas"; // "todas" o el nombre de una lista
 
 document.querySelectorAll("#task-filters .chip").forEach(chip => {
   chip.addEventListener("click", () => {
@@ -205,19 +215,82 @@ document.getElementById("form-quick-task").addEventListener("submit", ev => {
   const input = document.getElementById("quick-task-input");
   const titulo = input.value.trim();
   if (!titulo) return;
-  tareas.push({ id: uid(), titulo, fecha: "", hora: "", prioridad: 0, recordar: false, notas: "", hecha: false, avisada: false });
+  tareas.push({
+    id: uid(), titulo, fecha: "", hora: "", prioridad: 0, recordar: false,
+    notas: "", hecha: false, avisada: false,
+    lista: listaSel === "todas" ? "" : listaSel
+  });
   guardarTareas();
   input.value = "";
   renderTareas();
 });
 
+// ---------- Listas de pendientes ----------
+function renderListas() {
+  const row = document.getElementById("listas-row");
+  row.innerHTML = "";
+
+  const pendientesDe = nombre =>
+    tareas.filter(t => !t.hecha && (nombre === "todas" ? true : t.lista === nombre)).length;
+
+  const chipDe = (nombre, etiqueta) => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (listaSel === nombre ? " active" : "");
+    const n = pendientesDe(nombre);
+    chip.textContent = etiqueta + (n ? ` (${n})` : "");
+    chip.addEventListener("click", () => {
+      listaSel = nombre;
+      renderTareas();
+    });
+    return chip;
+  };
+
+  row.appendChild(chipDe("todas", "Todas"));
+  listas.forEach(nombre => row.appendChild(chipDe(nombre, "📋 " + nombre)));
+
+  // Eliminar la lista activa
+  if (listaSel !== "todas") {
+    const del = document.createElement("button");
+    del.className = "chip chip-danger";
+    del.textContent = "🗑 Eliminar lista";
+    del.addEventListener("click", () => {
+      if (!confirm(`¿Eliminar la lista "${listaSel}"? Sus tareas se conservan sin lista.`)) return;
+      tareas.forEach(t => { if (t.lista === listaSel) t.lista = ""; });
+      listas = listas.filter(n => n !== listaSel);
+      listaSel = "todas";
+      guardarTareas();
+      guardarListas();
+      renderTareas();
+    });
+    row.appendChild(del);
+  }
+
+  const nueva = document.createElement("button");
+  nueva.className = "chip";
+  nueva.textContent = "＋ Lista";
+  nueva.addEventListener("click", () => {
+    const nombre = (prompt("Nombre de la nueva lista (ej. Compras):") || "").trim();
+    if (!nombre) return;
+    if (!listas.includes(nombre)) {
+      listas.push(nombre);
+      guardarListas();
+    }
+    listaSel = nombre;
+    renderTareas();
+  });
+  row.appendChild(nueva);
+}
+
 function renderTareas() {
+  renderListas();
   const hoy = hoyISO();
   let lista;
   if (filtroTareas === "hoy") lista = tareas.filter(t => !t.hecha && t.fecha === hoy);
   else if (filtroTareas === "proximas") lista = tareas.filter(t => !t.hecha && t.fecha > hoy);
   else if (filtroTareas === "completadas") lista = tareas.filter(t => t.hecha);
   else lista = tareas.filter(t => !t.hecha);
+
+  if (listaSel !== "todas") lista = lista.filter(t => t.lista === listaSel);
 
   const cont = document.getElementById("lista-tareas");
   cont.innerHTML = "";
@@ -328,6 +401,21 @@ function abrirModal(tipo) {
   document.getElementById("form-item").reset();
   document.getElementById("m-fecha").value =
     vistaActual === "calendario" ? calDiaSel : hoyISO();
+
+  const sel = document.getElementById("m-lista");
+  sel.innerHTML = "";
+  const opt = document.createElement("option");
+  opt.value = "";
+  opt.textContent = "Ninguna";
+  sel.appendChild(opt);
+  listas.forEach(nombre => {
+    const o = document.createElement("option");
+    o.value = nombre;
+    o.textContent = nombre;
+    sel.appendChild(o);
+  });
+  sel.value = listaSel === "todas" ? "" : listaSel;
+
   modal.classList.remove("hidden");
   document.getElementById("m-titulo").focus();
 }
@@ -351,6 +439,7 @@ document.getElementById("form-item").addEventListener("submit", ev => {
 
   if (modalTipo === "tarea") {
     item.prioridad = Number(document.getElementById("m-prioridad").value);
+    item.lista = document.getElementById("m-lista").value;
     item.hecha = false;
     item.avisada = false;
     tareas.push(item);
@@ -391,10 +480,32 @@ function mostrarToast(msg) {
 
 function notificar(titulo, cuerpo) {
   mostrarToast(`🔔 ${titulo}${cuerpo ? " — " + cuerpo : ""}`);
-  if ("Notification" in window && Notification.permission === "granted") {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  // En la app instalada de iOS, new Notification() no existe: hay que usar el SW
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then(reg => reg.showNotification(titulo, {
+        body: cuerpo,
+        icon: "icons/icon-192.png",
+        badge: "icons/icon-192.png"
+      }))
+      .catch(() => {
+        try { new Notification(titulo, { body: cuerpo, icon: "icons/apple-touch-icon.png" }); }
+        catch { /* solo queda el toast */ }
+      });
+  } else {
     try { new Notification(titulo, { body: cuerpo, icon: "icons/apple-touch-icon.png" }); }
-    catch { /* iOS puede requerir service worker para notificar */ }
+    catch { /* solo queda el toast */ }
   }
+}
+
+// Globito con el número de pendientes en el ícono de la app (iOS 16.4+ instalada)
+function actualizarBadge() {
+  if (!("setAppBadge" in navigator)) return;
+  const hoy = hoyISO();
+  const n = tareas.filter(t => !t.hecha && t.fecha && t.fecha <= hoy).length;
+  if (n > 0) navigator.setAppBadge(n).catch(() => {});
+  else navigator.clearAppBadge().catch(() => {});
 }
 
 function revisarRecordatorios() {
@@ -416,8 +527,13 @@ function revisarRecordatorios() {
       guardarEventos();
     }
   });
+  actualizarBadge();
 }
 setInterval(revisarRecordatorios, 30000);
+// Al regresar a la app, revisar de inmediato lo que venció mientras tanto
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) revisarRecordatorios();
+});
 
 // ---------- Service worker (offline) ----------
 if ("serviceWorker" in navigator) {
