@@ -3,10 +3,21 @@
 param([int]$Port = 8321)
 
 $root = $PSScriptRoot
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:$Port/")
-$listener.Start()
+
+# Buscar un puerto libre (por si el inicial está ocupado)
+$listener = $null
+for ($p = $Port; $p -lt $Port + 20; $p++) {
+  $l = New-Object System.Net.HttpListener
+  $l.Prefixes.Add("http://localhost:$p/")
+  try { $l.Start(); $listener = $l; $Port = $p; break }
+  catch { $l.Close() }
+}
+if (-not $listener) {
+  Write-Host "No se encontró un puerto libre entre $Port y $($Port + 19). Cierra otros servidores e intenta de nuevo."
+  exit 1
+}
 Write-Host "IRIS sirviendo en http://localhost:$Port/ (Ctrl+C para detener)"
+Start-Process "http://localhost:$Port/"
 
 $mime = @{
   ".html" = "text/html; charset=utf-8"
