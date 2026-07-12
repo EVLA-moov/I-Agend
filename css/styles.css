@@ -165,7 +165,8 @@ button { font-family: inherit; }
   font-size: clamp(1.95rem, 6vw, 2.3rem);
   font-weight: 800;
   letter-spacing: -.035em;
-  line-height: 1.02;
+  line-height: 1.2;
+  padding-bottom: .06em;      /* espacio para los descendentes (la "y") */
   background: var(--grad);
   -webkit-background-clip: text;
   background-clip: text;
