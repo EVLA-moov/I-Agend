@@ -53,12 +53,29 @@ html, body {
   height: 100%;
   overscroll-behavior: none;
 }
+html {
+  /* Color base + viñeta muy sutil en las esquinas para dar profundidad */
+  background:
+    radial-gradient(135% 95% at 50% -8%, transparent 60%, rgba(40, 28, 80, .06)),
+    var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  html {
+    background:
+      radial-gradient(135% 95% at 50% -8%, transparent 55%, rgba(0, 0, 0, .35)),
+      var(--bg);
+  }
+}
 
 body {
-  font-family: ui-rounded, -apple-system, BlinkMacSystemFont, "SF Pro Rounded", "Segoe UI", Roboto, sans-serif;
-  background: var(--bg);
+  /* Sans recta y con carácter (grotesca del sistema), no redondeada */
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI",
+    system-ui, "Helvetica Neue", Roboto, Arial, sans-serif;
+  background: transparent;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "ss01", "cv01";
   -webkit-tap-highlight-color: transparent;
   padding-bottom: calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom));
 }
@@ -72,11 +89,12 @@ body::before {
   z-index: -2;
   pointer-events: none;
   background:
-    radial-gradient(42% 38% at 12% 8%, rgba(109, 92, 232, .38), transparent 68%),
-    radial-gradient(38% 36% at 92% 14%, rgba(201, 79, 208, .32), transparent 68%),
-    radial-gradient(36% 34% at 78% 86%, rgba(64, 158, 232, .26), transparent 68%),
-    radial-gradient(34% 32% at 8% 88%, rgba(232, 92, 170, .22), transparent 68%),
-    radial-gradient(30% 30% at 50% 45%, rgba(154, 84, 224, .14), transparent 70%);
+    radial-gradient(48% 42% at 14% 6%, rgba(109, 92, 232, .5), transparent 66%),
+    radial-gradient(46% 42% at 90% 12%, rgba(201, 79, 208, .44), transparent 66%),
+    radial-gradient(44% 40% at 82% 84%, rgba(64, 158, 232, .38), transparent 66%),
+    radial-gradient(42% 38% at 6% 90%, rgba(232, 92, 170, .34), transparent 66%),
+    radial-gradient(40% 40% at 60% 58%, rgba(122, 208, 190, .22), transparent 68%),
+    radial-gradient(38% 34% at 40% 30%, rgba(154, 84, 224, .2), transparent 70%);
   animation: aurora 26s ease-in-out infinite alternate;
   will-change: transform;
 }
@@ -119,25 +137,49 @@ button { font-family: inherit; }
   justify-content: space-between;
   max-width: 780px;
   margin-inline: auto;
-  padding: calc(16px + env(safe-area-inset-top)) 22px 10px;
+  padding: calc(18px + env(safe-area-inset-top)) 22px 12px;
   position: sticky;
   top: 0;
-  background: linear-gradient(color-mix(in srgb, var(--bg) 82%, transparent) 60%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: transparent;
+  isolation: isolate;
   z-index: 10;
 }
+/* Backing de vidrio a todo lo ancho, difuminado hacia abajo con máscara:
+   así no queda la línea de corte que se veía antes. */
+.app-header::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  z-index: -1;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--bg) 58%, transparent), transparent);
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent);
+          mask-image: linear-gradient(to bottom, #000 58%, transparent);
+}
 .app-header h1 {
-  font-size: 1.85rem;
+  font-size: clamp(1.95rem, 6vw, 2.3rem);
   font-weight: 800;
-  letter-spacing: -.02em;
+  letter-spacing: -.035em;
+  line-height: 1.02;
   background: var(--grad);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
+  filter: drop-shadow(0 1px 1px rgba(80, 50, 160, .14));
 }
-#header-date { color: var(--muted); font-size: .9rem; text-transform: capitalize; font-weight: 500; }
+#header-date {
+  color: var(--muted);
+  font-size: .9rem;
+  text-transform: capitalize;
+  font-weight: 600;
+  letter-spacing: .01em;
+}
 
 /* Botón de cristal de color (destello superior sobre el degradado) */
 .btn-fab {
@@ -173,15 +215,15 @@ button { font-family: inherit; }
 }
 
 .section-label {
-  font-size: .8rem;
+  font-size: .74rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--muted);
-  margin: 22px 0 10px;
+  letter-spacing: .14em;
+  color: color-mix(in srgb, var(--text) 62%, var(--muted));
+  margin: 24px 0 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 .section-label::after {
   content: "";
@@ -234,8 +276,8 @@ button { font-family: inherit; }
   border-radius: 50%;
   background: rgba(255, 255, 255, .12);
 }
-.resumen-card p:first-child { font-size: 1.3rem; font-weight: 800; letter-spacing: -.01em; }
-.resumen-card .muted { color: rgba(255, 255, 255, .88); }
+.resumen-card p:first-child { font-size: 1.55rem; font-weight: 800; letter-spacing: -.025em; line-height: 1.05; }
+.resumen-card .muted { color: rgba(255, 255, 255, .9); font-weight: 500; }
 .muted { color: var(--muted); font-size: .92rem; margin-top: 3px; }
 
 .empty {
@@ -392,7 +434,7 @@ button { font-family: inherit; }
   justify-content: space-between;
   margin: 6px 0 12px;
 }
-.cal-nav h2 { font-size: 1.2rem; text-transform: capitalize; font-weight: 800; letter-spacing: -.01em; }
+.cal-nav h2 { font-size: 1.35rem; text-transform: capitalize; font-weight: 800; letter-spacing: -.025em; }
 .btn-ghost {
   color: var(--text);
   border-radius: 999px;
@@ -421,8 +463,8 @@ button { font-family: inherit; }
   aspect-ratio: 1;
   border-radius: 16px;
   color: var(--text);
-  font-size: .95rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
   position: relative;
   display: flex;
