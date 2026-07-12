@@ -435,6 +435,60 @@ function redibujar() {
   trazos.forEach(t => dibujarTrazo(ctx, t));
 }
 
+// ---------- Paleta de colores propia ----------
+(function initPaleta() {
+  const input = document.getElementById("ed-color");
+  const btn = document.getElementById("ed-color-btn");
+  const pop = document.getElementById("ed-palette");
+  const grid = document.getElementById("palette-grid");
+  const custom = document.getElementById("palette-custom");
+  if (!input || !btn || !pop || !grid) return;
+
+  const colores = [
+    "#1a1a2e", "#5b5670", "#8a8698", "#ffffff",
+    "#6d5ce8", "#9a54e0", "#c94fd0", "#e85cb0",
+    "#e5484d", "#f5651a", "#f5a524", "#f2d024",
+    "#30a46c", "#12b3a6", "#2f9be8", "#4657e5"
+  ];
+
+  const pintaBtn = () => { btn.style.background = input.value; };
+  const marca = () => {
+    [...grid.children].forEach(s =>
+      s.classList.toggle("sel", s.dataset.c.toLowerCase() === input.value.toLowerCase()));
+  };
+  const cerrar = () => pop.classList.add("hidden");
+  const abrir = () => { pop.classList.remove("hidden"); marca(); };
+
+  colores.forEach(c => {
+    const s = document.createElement("button");
+    s.type = "button";
+    s.className = "swatch" + (c.toLowerCase() === "#ffffff" ? " swatch-blanco" : "");
+    s.dataset.c = c;
+    s.style.background = c;
+    s.setAttribute("aria-label", "Color " + c);
+    s.addEventListener("click", () => {
+      input.value = c;
+      pintaBtn();
+      marca();
+      cerrar();
+    });
+    grid.appendChild(s);
+  });
+
+  btn.addEventListener("click", ev => {
+    ev.stopPropagation();
+    pop.classList.contains("hidden") ? abrir() : cerrar();
+  });
+  // "Personalizado" abre el selector nativo para cualquier color
+  if (custom) custom.addEventListener("click", () => input.click());
+  input.addEventListener("input", () => { pintaBtn(); marca(); });
+  document.addEventListener("click", ev => {
+    if (!pop.contains(ev.target) && ev.target !== btn) cerrar();
+  });
+
+  pintaBtn();
+})();
+
 // Autoguardado cada 20 s mientras el editor está abierto
 setInterval(() => {
   if (!editor.classList.contains("hidden")) guardarNota();
