@@ -377,7 +377,7 @@ button { font-family: inherit; }
 }
 .task-item.done .task-title { text-decoration: line-through; color: var(--muted); }
 
-.task-body { flex: 1; min-width: 0; }
+.task-body { flex: 1; min-width: 0; cursor: pointer; }
 .task-title { font-weight: 700; font-size: .98rem; overflow-wrap: anywhere; }
 .task-meta { display: flex; gap: 7px; margin-top: 4px; flex-wrap: wrap; }
 .meta-chip {
@@ -424,7 +424,7 @@ button { font-family: inherit; }
   color: transparent;
   font-size: .95rem;
 }
-.event-body { flex: 1; min-width: 0; }
+.event-body { flex: 1; min-width: 0; cursor: pointer; }
 .event-title { font-weight: 700; font-size: .98rem; }
 .event-notas { color: var(--muted); font-size: .85rem; margin-top: 2px; }
 
@@ -461,7 +461,7 @@ button { font-family: inherit; }
   padding: 4px 0;
 }
 .cal-day {
-  aspect-ratio: 1;
+  height: 58px;
   border-radius: 16px;
   color: var(--text);
   font-size: 1rem;
@@ -495,6 +495,30 @@ button { font-family: inherit; }
   background: var(--accent-2);
 }
 .cal-day.sel .cal-dots i { background: #fff; }
+
+/* La lista de tareas/eventos del día siempre debe verse (aunque el día tenga
+   varias): en pantalla estrecha va debajo del mes */
+#cal-dia-items { min-height: 40px; }
+
+/* Pantalla ancha (iPad horizontal): mes a la izquierda, día a la derecha,
+   siempre visible sin scroll y sin que la barra flotante lo tape */
+@media (min-width: 900px) {
+  #view-calendario {
+    max-width: 1060px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 22px;
+    align-items: start;
+  }
+  #view-calendario .cal-right {
+    position: sticky;
+    top: 92px;
+    max-height: calc(100vh - 92px - var(--tabbar-h) - 40px);
+    overflow-y: auto;
+  }
+  #view-calendario .cal-day { height: 62px; }
+  #cal-dia-label { margin-top: 4px; }
+}
 
 /* ---------- Notas (galería) ---------- */
 .notes-grid {
@@ -661,12 +685,22 @@ button { font-family: inherit; }
 #ed-grosor { width: 90px; accent-color: var(--accent); }
 .solo-pencil { font-size: .82rem; color: var(--muted); display: flex; align-items: center; gap: 5px; font-weight: 600; }
 
+.editor-canvas-wrap { position: relative; flex: 1; }
+.editor-canvas-wrap canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 #ed-canvas {
-  flex: 1;
   touch-action: none;
   background: #fff;
   cursor: crosshair;
 }
+#ed-canvas-live { pointer-events: none; }
+/* Con el editor abierto, la aurora del fondo queda tapada: pausarla libera GPU
+   y baja la latencia del Pencil */
+body.editando-nota::before { animation-play-state: paused; }
 
 .btn-ia {
   border: 1px solid rgba(255, 255, 255, .4);
@@ -763,6 +797,9 @@ button { font-family: inherit; }
   transition: transform .12s ease;
 }
 .btn-primary:active { transform: scale(.95); }
+/* Botón eliminar dentro del modal de edición */
+.btn-ghost.peligro { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
+#m-eliminar { margin-right: auto; }   /* lo empuja a la izquierda */
 
 /* ---------- Ajustes e IA ---------- */
 .header-actions { display: flex; align-items: center; gap: 10px; }

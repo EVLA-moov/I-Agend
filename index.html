@@ -77,18 +77,21 @@
 
   <!-- ============ VISTA: CALENDARIO ============ -->
   <main id="view-calendario" class="view">
-    <div class="cal-nav">
-      <button id="cal-prev" class="btn-ghost" aria-label="Mes anterior">‹</button>
-      <h2 id="cal-mes"></h2>
-      <button id="cal-next" class="btn-ghost" aria-label="Mes siguiente">›</button>
+    <div class="cal-left">
+      <div class="cal-nav">
+        <button id="cal-prev" class="btn-ghost" aria-label="Mes anterior">‹</button>
+        <h2 id="cal-mes"></h2>
+        <button id="cal-next" class="btn-ghost" aria-label="Mes siguiente">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+      </div>
+      <div id="cal-grid" class="cal-grid"></div>
     </div>
-    <div class="cal-weekdays">
-      <span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span>
+    <div class="cal-right">
+      <h2 class="section-label" id="cal-dia-label"></h2>
+      <div id="cal-dia-items" class="event-list"></div>
     </div>
-    <div id="cal-grid" class="cal-grid"></div>
-
-    <h2 class="section-label" id="cal-dia-label"></h2>
-    <div id="cal-dia-items" class="event-list"></div>
   </main>
 
   <!-- ============ VISTA: TAREAS ============ -->
@@ -151,12 +154,16 @@
         <button id="ed-ia-imagen" class="btn-ia" title="Generar imagen desde el boceto"><svg class="icn"><use href="#i-imagen"/></svg> Imagen</button>
       </div>
     </div>
-    <canvas id="ed-canvas"></canvas>
+    <div class="editor-canvas-wrap">
+      <canvas id="ed-canvas"></canvas>
+      <canvas id="ed-canvas-live"></canvas>
+    </div>
   </div>
 
   <!-- ============ MODAL: NUEVA TAREA / EVENTO ============ -->
   <div id="modal" class="modal hidden">
     <div class="modal-box">
+      <h2 id="m-edit-title" class="modal-title hidden">Editar</h2>
       <div class="modal-tabs">
         <button class="chip active" data-mtab="tarea">Tarea</button>
         <button class="chip" data-mtab="evento">Evento</button>
@@ -183,6 +190,7 @@
         </div>
         <textarea id="m-notas" placeholder="Notas (opcional)" rows="2"></textarea>
         <div class="modal-actions">
+          <button type="button" id="m-eliminar" class="btn-ghost peligro hidden">Eliminar</button>
           <button type="button" id="m-cancelar" class="btn-ghost">Cancelar</button>
           <button type="submit" class="btn-primary">Guardar</button>
         </div>

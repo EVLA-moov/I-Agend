@@ -169,6 +169,9 @@ function elTarea(t) {
     render();
   });
 
+  // Tocar el cuerpo abre la ficha para ver/editar
+  body.addEventListener("click", () => abrirModalEditar("tarea", t));
+
   div.append(check, body, del);
   return div;
 }
@@ -203,6 +206,9 @@ function elEvento(e) {
     guardarEventos();
     render();
   });
+
+  // Tocar el cuerpo abre la ficha para ver/editar
+  body.addEventListener("click", () => abrirModalEditar("evento", e));
 
   div.append(hora, body, del);
   return div;
@@ -388,6 +394,24 @@ function renderCalendario() {
 // ---------- Modal nueva tarea / evento ----------
 const modal = document.getElementById("modal");
 let modalTipo = "tarea";
+let editando = null;   // {tipo, id} cuando se edita un elemento existente
+
+// Rellena el desplegable de listas y selecciona un valor
+function poblarSelectLista(valor) {
+  const sel = document.getElementById("m-lista");
+  sel.innerHTML = "";
+  const opt = document.createElement("option");
+  opt.value = "";
+  opt.textContent = "Ninguna";
+  sel.appendChild(opt);
+  listas.forEach(nombre => {
+    const o = document.createElement("option");
+    o.value = nombre;
+    o.textContent = nombre;
+    sel.appendChild(o);
+  });
+  sel.value = valor || "";
+}
 
 document.getElementById("btn-header-add").addEventListener("click", () => {
   if (vistaActual === "notas") {
@@ -409,27 +433,47 @@ function setModalTipo(tipo) {
 }
 
 function abrirModal(tipo) {
+  editando = null;
   setModalTipo(tipo);
   document.getElementById("form-item").reset();
   document.getElementById("m-fecha").value =
     vistaActual === "calendario" ? calDiaSel : hoyISO();
+  poblarSelectLista(listaSel === "todas" ? "" : listaSel);
 
-  const sel = document.getElementById("m-lista");
-  sel.innerHTML = "";
-  const opt = document.createElement("option");
-  opt.value = "";
-  opt.textContent = "Ninguna";
-  sel.appendChild(opt);
-  listas.forEach(nombre => {
-    const o = document.createElement("option");
-    o.value = nombre;
-    o.textContent = nombre;
-    sel.appendChild(o);
-  });
-  sel.value = listaSel === "todas" ? "" : listaSel;
+  // Modo "nuevo": pestañas visibles, sin título de edición ni botón eliminar
+  document.querySelector("#modal .modal-tabs").classList.remove("hidden");
+  document.getElementById("m-edit-title").classList.add("hidden");
+  document.getElementById("m-eliminar").classList.add("hidden");
 
   modal.classList.remove("hidden");
   document.getElementById("m-titulo").focus();
+}
+
+// Abre la ficha de un elemento existente para verlo y editarlo
+function abrirModalEditar(tipo, item) {
+  editando = { tipo, id: item.id };
+  setModalTipo(tipo);
+  document.getElementById("form-item").reset();
+
+  document.getElementById("m-titulo").value = item.titulo || "";
+  document.getElementById("m-fecha").value = item.fecha || "";
+  document.getElementById("m-hora").value = item.hora || "";
+  document.getElementById("m-recordar").checked = !!item.recordar;
+  document.getElementById("m-notas").value = item.notas || "";
+  if (tipo === "tarea") {
+    document.getElementById("m-prioridad").value = String(item.prioridad || 0);
+    poblarSelectLista(item.lista || "");
+  }
+
+  // Modo "editar": oculta las pestañas (no se cambia el tipo), muestra
+  // título de edición y el botón de eliminar
+  document.querySelector("#modal .modal-tabs").classList.add("hidden");
+  const titulo = document.getElementById("m-edit-title");
+  titulo.textContent = tipo === "tarea" ? "Editar tarea" : "Editar evento";
+  titulo.classList.remove("hidden");
+  document.getElementById("m-eliminar").classList.remove("hidden");
+
+  modal.classList.remove("hidden");
 }
 
 document.getElementById("m-cancelar").addEventListener("click", () => modal.classList.add("hidden"));
@@ -437,18 +481,40 @@ modal.addEventListener("click", ev => { if (ev.target === modal) modal.classList
 
 document.getElementById("form-item").addEventListener("submit", ev => {
   ev.preventDefault();
-  const item = {
-    id: uid(),
-    titulo: document.getElementById("m-titulo").value.trim(),
-    fecha: document.getElementById("m-fecha").value,
-    hora: document.getElementById("m-hora").value,
-    recordar: document.getElementById("m-recordar").checked,
-    notas: document.getElementById("m-notas").value.trim()
-  };
-  if (!item.titulo) return;
+  const titulo = document.getElementById("m-titulo").value.trim();
+  if (!titulo) return;
+  const fecha = document.getElementById("m-fecha").value;
+  const hora = document.getElementById("m-hora").value;
+  const recordar = document.getElementById("m-recordar").checked;
+  const notas = document.getElementById("m-notas").value.trim();
+  if (recordar) pedirPermisoNotificaciones();
 
-  if (item.recordar) pedirPermisoNotificaciones();
+  // ---- Editar un elemento existente ----
+  if (editando) {
+    if (editando.tipo === "tarea") {
+      const t = tareas.find(x => x.id === editando.id);
+      if (t) {
+        Object.assign(t, {
+          titulo, fecha, hora, recordar, notas,
+          prioridad: Number(document.getElementById("m-prioridad").value),
+          lista: document.getElementById("m-lista").value,
+          avisada: false   // permitir que el recordatorio vuelva a sonar
+        });
+      }
+      guardarTareas();
+    } else {
+      const e = eventos.find(x => x.id === editando.id);
+      if (e) Object.assign(e, { titulo, fecha, hora, recordar, notas, avisado: false });
+      guardarEventos();
+    }
+    editando = null;
+    modal.classList.add("hidden");
+    render();
+    return;
+  }
 
+  // ---- Crear nuevo ----
+  const item = { id: uid(), titulo, fecha, hora, recordar, notas };
   if (modalTipo === "tarea") {
     item.prioridad = Number(document.getElementById("m-prioridad").value);
     item.lista = document.getElementById("m-lista").value;
@@ -461,6 +527,22 @@ document.getElementById("form-item").addEventListener("submit", ev => {
     eventos.push(item);
     guardarEventos();
   }
+  modal.classList.add("hidden");
+  render();
+});
+
+// Eliminar desde la ficha de edición
+document.getElementById("m-eliminar").addEventListener("click", () => {
+  if (!editando) return;
+  if (!confirm("¿Eliminar este elemento?")) return;
+  if (editando.tipo === "tarea") {
+    tareas = tareas.filter(x => x.id !== editando.id);
+    guardarTareas();
+  } else {
+    eventos = eventos.filter(x => x.id !== editando.id);
+    guardarEventos();
+  }
+  editando = null;
   modal.classList.add("hidden");
   render();
 });

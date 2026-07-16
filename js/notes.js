@@ -110,9 +110,15 @@ function nuevaNota() {
 window.nuevaNota = nuevaNota;
 
 // ---------- Editor ----------
+// Dos capas: `canvas`/`ctx` = base con los trazos confirmados (no se toca
+// mientras dibujas); `liveCanvas`/`liveCtx` = solo el trazo en curso, se
+// repinta en cada frame. Así el retraso no crece con el número de trazos.
 const editor = document.getElementById("editor-notas");
 const canvas = document.getElementById("ed-canvas");
-const ctx = canvas.getContext("2d");
+const liveCanvas = document.getElementById("ed-canvas-live");
+// desynchronized: menor latencia de entrada→pantalla (clave para el Pencil)
+const ctx = canvas.getContext("2d", { desynchronized: true });
+const liveCtx = liveCanvas.getContext("2d", { desynchronized: true });
 
 let notaActual = null;
 let trazos = [];        // trazos confirmados
@@ -123,10 +129,17 @@ let herramienta = "pen";
 function ajustarCanvas() {
   const rect = canvas.getBoundingClientRect();
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
+  [canvas, liveCanvas].forEach(cv => {
+    cv.width = rect.width * dpr;
+    cv.height = rect.height * dpr;
+  });
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  liveCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   redibujar();
+}
+function limpiarLive() {
+  const rect = liveCanvas.getBoundingClientRect();
+  liveCtx.clearRect(0, 0, rect.width, rect.height);
 }
 window.addEventListener("resize", () => {
   if (!editor.classList.contains("hidden")) ajustarCanvas();
@@ -138,12 +151,14 @@ function abrirEditor(nota) {
   rehacer = [];
   document.getElementById("ed-titulo").value = nota.titulo || "";
   editor.classList.remove("hidden");
+  document.body.classList.add("editando-nota");
   requestAnimationFrame(ajustarCanvas);
 }
 
 document.getElementById("ed-volver").addEventListener("click", async () => {
   await guardarNota();
   editor.classList.add("hidden");
+  document.body.classList.remove("editando-nota");
   renderNotas();
 });
 
@@ -215,17 +230,45 @@ function permitido(ev) {
   return true;
 }
 
+// Borra un solo segmento sobre la base (barato, para el borrador incremental)
+function borrarSegmento(c, p0, p1, size) {
+  if (!p0) return;
+  c.save();
+  c.globalCompositeOperation = "destination-out";
+  c.lineCap = "round";
+  c.lineJoin = "round";
+  c.lineWidth = Math.max(1, size * 3);
+  c.beginPath();
+  c.moveTo(p0.x, p0.y);
+  c.lineTo(p1.x, p1.y);
+  c.stroke();
+  c.restore();
+}
+
+let ultimoBorrado = null;   // último punto del borrador (para el segmento)
+let frameSolicitado = false;
+
+// Repinta el trazo en curso en la capa "en vivo" (una vez por frame)
+function pintarLive() {
+  frameSolicitado = false;
+  if (!trazoActivo || trazoActivo.tool === "eraser") return;
+  limpiarLive();
+  dibujarTrazo(liveCtx, trazoActivo);
+}
+
 canvas.addEventListener("pointerdown", ev => {
   if (!permitido(ev)) return;
   ev.preventDefault();
   try { canvas.setPointerCapture(ev.pointerId); } catch { /* algunos entornos no lo soportan */ }
+  const p = puntoDesdeEvento(ev);
   trazoActivo = {
     tool: herramienta,
     color: document.getElementById("ed-color").value,
     size: Number(document.getElementById("ed-grosor").value),
     seed: (Math.random() * 2 ** 31) | 0,
-    puntos: [puntoDesdeEvento(ev)]
+    puntos: [p]
   };
+  ultimoBorrado = herramienta === "eraser" ? p : null;
 });
 
 canvas.addEventListener("pointermove", ev => {
@@ -234,19 +277,35 @@ canvas.addEventListener("pointermove", ev => {
   // getCoalescedEvents da los puntos intermedios de alta frecuencia del Pencil
   let evs = ev.getCoalescedEvents ? ev.getCoalescedEvents() : [];
   if (!evs.length) evs = [ev];
-  evs.forEach(e => trazoActivo.puntos.push(puntoDesdeEvento(e)));
-  redibujar();
-  dibujarTrazo(ctx, trazoActivo);
+
+  if (trazoActivo.tool === "eraser") {
+    // El borrador actúa directo sobre la base, segmento a segmento
+    evs.forEach(e => {
+      const p = puntoDesdeEvento(e);
+      trazoActivo.puntos.push(p);
+      borrarSegmento(ctx, ultimoBorrado, p, trazoActivo.size);
+      ultimoBorrado = p;
+    });
+  } else {
+    evs.forEach(e => trazoActivo.puntos.push(puntoDesdeEvento(e)));
+    // Solo un repintado por frame: la base no se toca mientras dibujas
+    if (!frameSolicitado) {
+      frameSolicitado = true;
+      requestAnimationFrame(pintarLive);
+    }
+  }
 });
 
-function terminarTrazo(ev) {
+function terminarTrazo() {
   if (!trazoActivo) return;
   if (trazoActivo.puntos.length > 1) {
+    // El borrador ya quedó pintado en la base; los demás se confirman ahora
+    if (trazoActivo.tool !== "eraser") dibujarTrazo(ctx, trazoActivo);
     trazos.push(trazoActivo);
     rehacer = [];
   }
   trazoActivo = null;
-  redibujar();
+  limpiarLive();
 }
 canvas.addEventListener("pointerup", terminarTrazo);
 canvas.addEventListener("pointercancel", terminarTrazo);
