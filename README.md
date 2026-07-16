@@ -29,6 +29,12 @@ HTML, CSS y JavaScript puros.
   con nombre (Compras, Escuela…) desde la vista Tareas; cada tarea puede
   pertenecer a una lista y conservar fecha, prioridad y recordatorio.
 - **Offline**: el service worker deja la app disponible sin conexión.
+- **Respaldo**: desde Ajustes puedes exportar todas tus tareas, eventos, listas
+  y notas a un archivo, y restaurarlo aquí o en otro dispositivo (no incluye
+  la clave de API). La app además solicita almacenamiento persistente para
+  que el sistema no purgue los datos.
+- **Deshacer al eliminar**: borrar una tarea, evento o nota muestra un aviso
+  con botón "Deshacer" durante unos segundos.
 - **IA (v2, modelo BYOK)**: en Ajustes (⚙️) cada usuario pega su propia clave de
   la API de Google Gemini (gratuita, de [aistudio.google.com/apikey](https://aistudio.google.com/apikey)).
   La clave se guarda solo en el dispositivo — nunca en el código ni en el repositorio.

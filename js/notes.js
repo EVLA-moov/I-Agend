@@ -90,6 +90,10 @@ async function renderNotas() {
       ev.stopPropagation();
       await dbBorrar(nota.id);
       renderNotas();
+      window.mostrarToastAccion("Nota eliminada", "Deshacer", async () => {
+        await dbGuardar(nota);
+        renderNotas();
+      });
     });
 
     card.append(btn, del);
@@ -199,12 +203,14 @@ document.getElementById("ed-undo").addEventListener("click", () => {
   if (trazos.length) {
     rehacer.push(trazos.pop());
     redibujar();
+    programarGuardado();
   }
 });
 document.getElementById("ed-redo").addEventListener("click", () => {
   if (rehacer.length) {
     trazos.push(rehacer.pop());
     redibujar();
+    programarGuardado();
   }
 });
 document.getElementById("ed-clear").addEventListener("click", () => {
@@ -212,6 +218,7 @@ document.getElementById("ed-clear").addEventListener("click", () => {
   rehacer = [...trazos.reverse()];
   trazos = [];
   redibujar();
+  programarGuardado();
 });
 
 // ---------- Dibujo con Pointer Events (Apple Pencil incluido) ----------
@@ -296,6 +303,14 @@ canvas.addEventListener("pointermove", ev => {
   }
 });
 
+// Guardado con pequeña espera: al soltar cada trazo se programa; así no se
+// pierde nada si cierran la app antes del autoguardado de 20 s
+let timerGuardado = null;
+function programarGuardado() {
+  clearTimeout(timerGuardado);
+  timerGuardado = setTimeout(() => guardarNota(), 1200);
+}
+
 function terminarTrazo() {
   if (!trazoActivo) return;
   if (trazoActivo.puntos.length > 1) {
@@ -303,12 +318,18 @@ function terminarTrazo() {
     if (trazoActivo.tool !== "eraser") dibujarTrazo(ctx, trazoActivo);
     trazos.push(trazoActivo);
     rehacer = [];
+    programarGuardado();
   }
   trazoActivo = null;
   limpiarLive();
 }
 canvas.addEventListener("pointerup", terminarTrazo);
 canvas.addEventListener("pointercancel", terminarTrazo);
+
+// Si la app pasa a segundo plano con el editor abierto, guardar de inmediato
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && !editor.classList.contains("hidden")) guardarNota();
+});
 
 // Caché de imágenes insertadas (dataURL → Image)
 const cacheImagenes = new Map();
@@ -553,10 +574,22 @@ setInterval(() => {
   if (!editor.classList.contains("hidden")) guardarNota();
 }, 20000);
 
-// ---------- API para el módulo de IA (js/ai.js) ----------
+// ---------- API para otros módulos (js/ai.js: IA y respaldo) ----------
 window.notasAPI = {
   editorAbierto: () => !editor.classList.contains("hidden"),
   hayTrazos: () => trazos.length > 0,
+  // Respaldo: leer todas las notas / reemplazarlas por las importadas
+  todasLasNotas: () => dbTodas(),
+  async importarNotas(notas) {
+    const db = await abrirDB();
+    await new Promise((res, rej) => {
+      const tx = db.transaction(DB_STORE, "readwrite");
+      tx.objectStore(DB_STORE).clear();
+      (notas || []).forEach(n => tx.objectStore(DB_STORE).put(n));
+      tx.oncomplete = res;
+      tx.onerror = () => rej(tx.error);
+    });
+  },
   // PNG del lienzo actual (incluye fondo blanco)
   exportarPNG() {
     return canvas.toDataURL("image/png");

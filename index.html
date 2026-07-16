@@ -186,8 +186,9 @@
           <label>Lista
             <select id="m-lista"></select>
           </label>
-          <label class="check-recordar"><input type="checkbox" id="m-recordar"> Recordarme</label>
         </div>
+        <!-- Fuera de la fila de prioridad: los eventos también deben poder recordar -->
+        <label class="check-recordar"><input type="checkbox" id="m-recordar"> Recordarme a la hora indicada</label>
         <textarea id="m-notas" placeholder="Notas (opcional)" rows="2"></textarea>
         <div class="modal-actions">
           <button type="button" id="m-eliminar" class="btn-ghost peligro hidden">Eliminar</button>
@@ -214,6 +215,17 @@
         <button type="button" id="aj-probar" class="btn-ghost">Probar conexión</button>
         <button type="button" id="aj-guardar" class="btn-primary">Guardar</button>
       </div>
+
+      <hr class="ajustes-sep">
+      <p class="ajustes-desc"><strong>Respaldo.</strong> Guarda tus tareas, eventos,
+        listas y notas en un archivo para restaurarlas aquí o en otro dispositivo.
+        No incluye tu clave de API.</p>
+      <div class="modal-actions ajustes-respaldo">
+        <button type="button" id="aj-exportar" class="btn-ghost">Exportar respaldo</button>
+        <button type="button" id="aj-importar" class="btn-ghost">Importar respaldo</button>
+        <input type="file" id="aj-import-file" accept=".json,application/json" class="hidden">
+      </div>
+      <p id="aj-respaldo-estado" class="ajustes-estado"></p>
     </div>
   </div>
 

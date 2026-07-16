@@ -35,8 +35,10 @@ const hoyISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
+// Solo la primera letra en mayúscula ("Domingo, 12 de julio", no "12 De Julio")
+const capitalizar = s => s.charAt(0).toUpperCase() + s.slice(1);
 const fmtFechaLarga = (d) =>
-  d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" });
+  capitalizar(d.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" }));
 const fmtFechaCorta = (iso) => {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
@@ -167,6 +169,11 @@ function elTarea(t) {
     tareas = tareas.filter(x => x.id !== t.id);
     guardarTareas();
     render();
+    mostrarToastAccion("Tarea eliminada", "Deshacer", () => {
+      tareas.push(t);
+      guardarTareas();
+      render();
+    });
   });
 
   // Tocar el cuerpo abre la ficha para ver/editar
@@ -205,6 +212,11 @@ function elEvento(e) {
     eventos = eventos.filter(x => x.id !== e.id);
     guardarEventos();
     render();
+    mostrarToastAccion("Evento eliminado", "Deshacer", () => {
+      eventos.push(e);
+      guardarEventos();
+      render();
+    });
   });
 
   // Tocar el cuerpo abre la ficha para ver/editar
@@ -323,19 +335,21 @@ function renderTareas() {
 let calFecha = new Date();          // mes visible
 let calDiaSel = hoyISO();           // día seleccionado
 
+// Navegar por meses fijando el día 1: con setMonth() sobre un día 29-31 el
+// desbordamiento saltaba meses (ej. 31 ene + 1 mes = "31 feb" = 3 de marzo)
 document.getElementById("cal-prev").addEventListener("click", () => {
-  calFecha.setMonth(calFecha.getMonth() - 1);
+  calFecha = new Date(calFecha.getFullYear(), calFecha.getMonth() - 1, 1);
   renderCalendario();
 });
 document.getElementById("cal-next").addEventListener("click", () => {
-  calFecha.setMonth(calFecha.getMonth() + 1);
+  calFecha = new Date(calFecha.getFullYear(), calFecha.getMonth() + 1, 1);
   renderCalendario();
 });
 
 function renderCalendario() {
   const y = calFecha.getFullYear(), m = calFecha.getMonth();
   document.getElementById("cal-mes").textContent =
-    calFecha.toLocaleDateString("es-MX", { month: "long", year: "numeric" });
+    capitalizar(calFecha.toLocaleDateString("es-MX", { month: "long", year: "numeric" }));
 
   const grid = document.getElementById("cal-grid");
   grid.innerHTML = "";
@@ -531,11 +545,12 @@ document.getElementById("form-item").addEventListener("submit", ev => {
   render();
 });
 
-// Eliminar desde la ficha de edición
+// Eliminar desde la ficha de edición (con opción de deshacer)
 document.getElementById("m-eliminar").addEventListener("click", () => {
   if (!editando) return;
-  if (!confirm("¿Eliminar este elemento?")) return;
-  if (editando.tipo === "tarea") {
+  const esTarea = editando.tipo === "tarea";
+  const item = (esTarea ? tareas : eventos).find(x => x.id === editando.id);
+  if (esTarea) {
     tareas = tareas.filter(x => x.id !== editando.id);
     guardarTareas();
   } else {
@@ -545,6 +560,13 @@ document.getElementById("m-eliminar").addEventListener("click", () => {
   editando = null;
   modal.classList.add("hidden");
   render();
+  if (item) {
+    mostrarToastAccion(esTarea ? "Tarea eliminada" : "Evento eliminado", "Deshacer", () => {
+      if (esTarea) { tareas.push(item); guardarTareas(); }
+      else { eventos.push(item); guardarEventos(); }
+      render();
+    });
+  }
 });
 
 // Crea tareas desde texto reconocido por la IA (una por línea)
@@ -571,6 +593,25 @@ function mostrarToast(msg) {
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.add("hidden"), 6000);
 }
+
+// Toast con botón de acción (ej. "Deshacer" tras eliminar)
+function mostrarToastAccion(msg, etiqueta, onAccion) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  const btn = document.createElement("button");
+  btn.className = "toast-accion";
+  btn.textContent = etiqueta;
+  btn.addEventListener("click", () => {
+    clearTimeout(toast._timer);
+    toast.classList.add("hidden");
+    onAccion();
+  });
+  toast.appendChild(btn);
+  toast.classList.remove("hidden");
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => toast.classList.add("hidden"), 6000);
+}
+window.mostrarToastAccion = mostrarToastAccion; // usada también por notes.js
 
 function notificar(titulo, cuerpo) {
   mostrarToast(`${titulo}${cuerpo ? " — " + cuerpo : ""}`);
@@ -634,6 +675,12 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   });
+}
+
+// Pedir almacenamiento persistente: sin esto el navegador puede purgar
+// localStorage/IndexedDB (¡todas las tareas y notas!) si falta espacio
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().catch(() => {});
 }
 
 // ---------- Inicio ----------

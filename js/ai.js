@@ -253,3 +253,65 @@ imgInsertar.addEventListener("click", () => {
   window.notasAPI.insertarImagen(imgResultado.src);
   modalImagen.classList.add("hidden");
 });
+
+// ---------- Respaldo: exportar / importar todos los datos ----------
+const respaldoEstado = document.getElementById("aj-respaldo-estado");
+
+function avisoRespaldo(msg, clase) {
+  respaldoEstado.textContent = msg;
+  respaldoEstado.className = "ajustes-estado" + (clase ? " " + clase : "");
+}
+
+document.getElementById("aj-exportar").addEventListener("click", async () => {
+  try {
+    const notas = await window.notasAPI.todasLasNotas();
+    const datos = {
+      app: "IRIS",
+      version: 1,
+      fecha: new Date().toISOString(),
+      tareas: JSON.parse(localStorage.getItem("iris.tareas") || "[]"),
+      eventos: JSON.parse(localStorage.getItem("iris.eventos") || "[]"),
+      listas: JSON.parse(localStorage.getItem("iris.listas") || "[]"),
+      notas
+      // La clave de API NO se incluye a propósito: no debe salir del dispositivo
+    };
+    const blob = new Blob([JSON.stringify(datos)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    const f = new Date();
+    a.download = `iris-respaldo-${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, "0")}-${String(f.getDate()).padStart(2, "0")}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    avisoRespaldo(`✓ Respaldo generado: ${datos.tareas.length} tareas, ${datos.eventos.length} eventos, ${notas.length} notas.`, "ok");
+  } catch (e) {
+    avisoRespaldo("No se pudo exportar: " + e.message, "error");
+  }
+});
+
+document.getElementById("aj-importar").addEventListener("click", () =>
+  document.getElementById("aj-import-file").click());
+
+document.getElementById("aj-import-file").addEventListener("change", async ev => {
+  const archivo = ev.target.files[0];
+  ev.target.value = "";
+  if (!archivo) return;
+  try {
+    const datos = JSON.parse(await archivo.text());
+    if (datos.app !== "IRIS" || !Array.isArray(datos.tareas) || !Array.isArray(datos.notas)) {
+      throw new Error("el archivo no es un respaldo de IRIS.");
+    }
+    const resumen = `${datos.tareas.length} tareas, ${(datos.eventos || []).length} eventos y ${datos.notas.length} notas`;
+    if (!confirm(`Se restaurará el respaldo (${resumen}) y se REEMPLAZARÁN los datos actuales de este dispositivo. ¿Continuar?`)) return;
+
+    localStorage.setItem("iris.tareas", JSON.stringify(datos.tareas));
+    localStorage.setItem("iris.eventos", JSON.stringify(datos.eventos || []));
+    localStorage.setItem("iris.listas", JSON.stringify(datos.listas || []));
+    await window.notasAPI.importarNotas(datos.notas);
+    // Recargar para que la app lea los datos restaurados
+    location.reload();
+  } catch (e) {
+    avisoRespaldo("No se pudo importar: " + e.message, "error");
+  }
+});

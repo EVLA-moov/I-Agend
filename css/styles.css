@@ -177,7 +177,6 @@ button { font-family: inherit; }
 #header-date {
   color: var(--muted);
   font-size: .9rem;
-  text-transform: capitalize;
   font-weight: 600;
   letter-spacing: .01em;
 }
@@ -435,7 +434,7 @@ button { font-family: inherit; }
   justify-content: space-between;
   margin: 6px 0 12px;
 }
-.cal-nav h2 { font-size: 1.35rem; text-transform: capitalize; font-weight: 800; letter-spacing: -.025em; }
+.cal-nav h2 { font-size: 1.35rem; font-weight: 800; letter-spacing: -.025em; }
 .btn-ghost {
   color: var(--text);
   border-radius: 999px;
@@ -778,7 +777,17 @@ body.editando-nota::before { animation-play-state: paused; }
 #form-item input:focus, #form-item textarea:focus { border-color: var(--accent); }
 .modal-row { display: flex; gap: 10px; }
 .modal-row label { flex: 1; font-size: .82rem; color: var(--muted); font-weight: 700; display: flex; flex-direction: column; gap: 4px; }
-.check-recordar { flex-direction: row !important; align-items: center; margin-top: 18px; }
+/* Checkbox de recordatorio: fila propia, visible para tareas Y eventos */
+.check-recordar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+}
+.check-recordar input { accent-color: var(--accent); width: 17px; height: 17px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
 .btn-primary {
   border: 1px solid rgba(255, 255, 255, .4);
@@ -849,6 +858,14 @@ body.editando-nota::before { animation-play-state: paused; }
 }
 @keyframes girar { to { transform: rotate(360deg); } }
 
+/* Separador y fila de respaldo en Ajustes */
+.ajustes-sep {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 18px 0 12px;
+}
+.ajustes-respaldo { justify-content: flex-start; margin-bottom: 6px; }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;
@@ -869,6 +886,21 @@ body.editando-nota::before { animation-play-state: paused; }
   max-width: 88vw;
   animation: subir .25s ease;
 }
+/* Botón de acción dentro del toast (ej. "Deshacer") */
+.toast-accion {
+  border: 1px solid color-mix(in srgb, var(--bg) 40%, transparent);
+  background: color-mix(in srgb, var(--bg) 18%, transparent);
+  color: inherit;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: .88rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+.toast-accion:active { transform: scale(.95); }
 
 /* ---------- Barra de pestañas flotante de cristal ---------- */
 .tabbar {
