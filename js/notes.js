@@ -108,6 +108,7 @@ function nuevaNota() {
     titulo: "",
     trazos: [],
     thumb: "",
+    papel: "liso",
     actualizada: Date.now()
   });
 }
@@ -154,6 +155,7 @@ function abrirEditor(nota) {
   trazos = (nota.trazos || []).map(t => ({ ...t, puntos: [...t.puntos] }));
   rehacer = [];
   document.getElementById("ed-titulo").value = nota.titulo || "";
+  aplicarPapel();
   editor.classList.remove("hidden");
   document.body.classList.add("editando-nota");
   requestAnimationFrame(ajustarCanvas);
@@ -190,14 +192,111 @@ async function guardarNota() {
   await dbGuardar(notaActual);
 }
 
-// ---------- Herramientas ----------
-document.querySelectorAll(".toolbar-tools .tool").forEach(btn => {
-  btn.addEventListener("click", () => {
-    herramienta = btn.dataset.tool;
-    document.querySelectorAll(".toolbar-tools .tool").forEach(b =>
-      b.classList.toggle("active", b === btn));
+// ---------- Herramientas (popover con todos los estilos + borrador aparte) ----------
+const HERRAMIENTAS = [
+  ["pen", "Pluma", "pluma"],
+  ["ballpoint", "Bolígrafo", "boligrafo"],
+  ["pencil", "Lápiz", "lapiz"],
+  ["brush", "Pincel", "pincel"],
+  ["calligraphy", "Caligrafía", "caligrafia"],
+  ["crayon", "Crayola", "crayola"],
+  ["spray", "Aerosol", "aerosol"],
+  ["neon", "Neón", "neon"],
+  ["dashed", "Punteada", "punteada"],
+  ["marker", "Subrayador", "subrayador"]
+];
+let herramientaDibujo = "pen";  // último estilo de dibujo (para volver del borrador)
+
+// Si un popover se sale por el borde derecho, recorrerlo hacia adentro
+function ajustarPopover(pop) {
+  pop.style.left = "0px";
+  const r = pop.getBoundingClientRect();
+  const sobra = r.right - (window.innerWidth - 10);
+  if (sobra > 0) pop.style.left = `-${Math.round(sobra)}px`;
+}
+
+(function initHerramientas() {
+  const btn = document.getElementById("ed-tool-btn");
+  const pop = document.getElementById("ed-tools-pop");
+  const grid = document.getElementById("tools-grid");
+  const eraserBtn = document.getElementById("ed-eraser-btn");
+  const icn = document.getElementById("ed-tool-icn");
+  if (!btn || !pop || !grid || !eraserBtn) return;
+
+  function actualizar() {
+    const def = HERRAMIENTAS.find(h => h[0] === herramientaDibujo);
+    icn.setAttribute("href", "#i-" + def[2]);
+    btn.title = "Estilo de trazo: " + def[1];
+    btn.classList.toggle("active", herramienta !== "eraser");
+    eraserBtn.classList.toggle("active", herramienta === "eraser");
+    [...grid.children].forEach(el =>
+      el.classList.toggle("sel", el.dataset.tool === herramientaDibujo));
+  }
+
+  HERRAMIENTAS.forEach(([tool, nombre, icono]) => {
+    const el = document.createElement("button");
+    el.type = "button";
+    el.className = "tool-opcion";
+    el.dataset.tool = tool;
+    el.innerHTML = `<svg class="icn"><use href="#i-${icono}"/></svg><span>${nombre}</span>`;
+    el.addEventListener("click", () => {
+      herramientaDibujo = tool;
+      herramienta = tool;
+      pop.classList.add("hidden");
+      actualizar();
+    });
+    grid.appendChild(el);
   });
+
+  btn.addEventListener("click", ev => {
+    ev.stopPropagation();
+    // Tocar el botón de estilo también sale del modo borrador
+    if (herramienta === "eraser") herramienta = herramientaDibujo;
+    const abierto = !pop.classList.contains("hidden");
+    pop.classList.toggle("hidden", abierto);
+    if (!abierto) ajustarPopover(pop);
+    actualizar();
+  });
+
+  eraserBtn.addEventListener("click", () => {
+    herramienta = herramienta === "eraser" ? herramientaDibujo : "eraser";
+    pop.classList.add("hidden");
+    actualizar();
+  });
+
+  document.addEventListener("click", ev => {
+    if (!pop.contains(ev.target) && !btn.contains(ev.target)) pop.classList.add("hidden");
+  });
+
+  actualizar();
+})();
+
+// ---------- Tipo de papel (liso / cuadrícula / rayas) ----------
+const PAPELES = ["liso", "cuadricula", "rayas"];
+function aplicarPapel() {
+  const wrap = document.querySelector(".editor-canvas-wrap");
+  const p = (notaActual && notaActual.papel) || "liso";
+  wrap.classList.remove("papel-cuadricula", "papel-rayas");
+  if (p !== "liso") wrap.classList.add("papel-" + p);
+  document.getElementById("ed-papel-icn").setAttribute("href", "#i-papel-" + p);
+}
+document.getElementById("ed-papel-btn").addEventListener("click", () => {
+  if (!notaActual) return;
+  const actual = notaActual.papel || "liso";
+  notaActual.papel = PAPELES[(PAPELES.indexOf(actual) + 1) % PAPELES.length];
+  aplicarPapel();
+  programarGuardado();
 });
+
+// ---------- Vista previa del grosor ----------
+function actualizarPuntoGrosor() {
+  const punto = document.getElementById("grosor-punto");
+  const s = Number(document.getElementById("ed-grosor").value);
+  const d = Math.round(Math.max(5, Math.min(26, s * 1.05 + 3.5)));
+  punto.style.width = punto.style.height = d + "px";
+  punto.style.background = document.getElementById("ed-color").value;
+}
+document.getElementById("ed-grosor").addEventListener("input", actualizarPuntoGrosor);
 
 document.getElementById("ed-undo").addEventListener("click", () => {
   if (trazos.length) {
@@ -508,10 +607,10 @@ function dibujarTrazo(c, t) {
 }
 
 function redibujar() {
+  // El bitmap queda transparente: el blanco y el papel (cuadrícula/rayas) los
+  // pone el contenedor por CSS, así el borrador revela el papel intacto
   const rect = canvas.getBoundingClientRect();
   ctx.clearRect(0, 0, rect.width, rect.height);
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, rect.width, rect.height);
   trazos.forEach(t => dibujarTrazo(ctx, t));
 }
 
@@ -531,13 +630,16 @@ function redibujar() {
     "#30a46c", "#12b3a6", "#2f9be8", "#4657e5"
   ];
 
-  const pintaBtn = () => { btn.style.background = input.value; };
+  const pintaBtn = () => {
+    btn.style.background = input.value;
+    actualizarPuntoGrosor();   // el punto de grosor refleja también el color
+  };
   const marca = () => {
     [...grid.children].forEach(s =>
       s.classList.toggle("sel", s.dataset.c.toLowerCase() === input.value.toLowerCase()));
   };
   const cerrar = () => pop.classList.add("hidden");
-  const abrir = () => { pop.classList.remove("hidden"); marca(); };
+  const abrir = () => { pop.classList.remove("hidden"); ajustarPopover(pop); marca(); };
 
   colores.forEach(c => {
     const s = document.createElement("button");
@@ -590,9 +692,16 @@ window.notasAPI = {
       tx.onerror = () => rej(tx.error);
     });
   },
-  // PNG del lienzo actual (incluye fondo blanco)
+  // PNG del lienzo actual compuesto sobre blanco (el bitmap es transparente)
   exportarPNG() {
-    return canvas.toDataURL("image/png");
+    const out = document.createElement("canvas");
+    out.width = canvas.width;
+    out.height = canvas.height;
+    const octx = out.getContext("2d");
+    octx.fillStyle = "#fff";
+    octx.fillRect(0, 0, out.width, out.height);
+    octx.drawImage(canvas, 0, 0);
+    return out.toDataURL("image/png");
   },
   // Inserta una imagen generada como elemento de la nota, centrada
   insertarImagen(dataUrl) {

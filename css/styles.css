@@ -682,9 +682,68 @@ button { font-family: inherit; }
 }
 .palette-custom:active { transform: scale(.97); }
 #ed-grosor { width: 90px; accent-color: var(--accent); }
+
+/* Popover de estilos de trazo */
+.tool-control { position: relative; display: inline-flex; }
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 66px);
+  gap: 8px;
+}
+@media (max-width: 480px) {
+  .tools-grid { grid-template-columns: repeat(4, 62px); }
+}
+.tool-opcion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 4px 8px;
+  border-radius: 13px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: .68rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, transform .12s ease;
+}
+.tool-opcion:active { transform: scale(.93); }
+.tool-opcion .icn { width: 1.4em; height: 1.4em; }
+.tool-opcion.sel {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+/* Vista previa del grosor: un punto que crece con el deslizador */
+.grosor-control { display: inline-flex; align-items: center; gap: 8px; }
+#grosor-punto {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25);
+  flex-shrink: 0;
+  transition: width .12s ease, height .12s ease;
+}
 .solo-pencil { font-size: .82rem; color: var(--muted); display: flex; align-items: center; gap: 5px; font-weight: 600; }
 
-.editor-canvas-wrap { position: relative; flex: 1; }
+/* El contenedor pone el "papel" (blanco, cuadrícula o rayas); el bitmap del
+   lienzo es transparente, así el borrador revela el papel sin dañarlo */
+.editor-canvas-wrap { position: relative; flex: 1; background: #fff; }
+.editor-canvas-wrap.papel-cuadricula {
+  background-image:
+    linear-gradient(to right, rgba(109, 92, 232, .12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(109, 92, 232, .12) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.editor-canvas-wrap.papel-rayas {
+  background-image:
+    linear-gradient(to bottom, transparent 30px, rgba(109, 92, 232, .16) 30px, rgba(109, 92, 232, .16) 31px, transparent 31px);
+  background-size: 100% 31px;
+}
 .editor-canvas-wrap canvas {
   position: absolute;
   inset: 0;
@@ -693,7 +752,7 @@ button { font-family: inherit; }
 }
 #ed-canvas {
   touch-action: none;
-  background: #fff;
+  background: transparent;
   cursor: crosshair;
 }
 #ed-canvas-live { pointer-events: none; }

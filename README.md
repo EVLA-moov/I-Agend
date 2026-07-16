@@ -20,11 +20,13 @@ HTML, CSS y JavaScript puros.
   al volver a ella.
 - **Notas**: lienzo de dibujo con soporte de Apple Pencil — presión,
   puntos de alta frecuencia (coalesced events), deshacer/rehacer y modo
-  "Solo Pencil" (rechazo de palma). Once estilos de trazo: pluma, bolígrafo,
-  lápiz, pincel, caligrafía, crayola, aerosol, neón, línea punteada,
-  subrayador y borrador (los estilos con textura usan ruido con semilla
-  para redibujarse idénticos). Las notas se guardan como trazos vectoriales
-  en IndexedDB con miniatura automática.
+  "Solo Pencil" (rechazo de palma). Diez estilos de trazo en un selector
+  desplegable (pluma, bolígrafo, lápiz, pincel, caligrafía, crayola, aerosol,
+  neón, línea punteada y subrayador) más borrador conmutable; los estilos con
+  textura usan ruido con semilla para redibujarse idénticos. Vista previa del
+  grosor junto al deslizador y tres tipos de papel por nota: liso, cuadrícula
+  y rayas (el borrador revela el papel intacto). Las notas se guardan como
+  trazos vectoriales en IndexedDB con miniatura automática.
 - **Listas de pendientes**: además de las tareas sueltas, puedes crear listas
   con nombre (Compras, Escuela…) desde la vista Tareas; cada tarea puede
   pertenecer a una lista y conservar fecha, prioridad y recordatorio.
