@@ -27,6 +27,10 @@ HTML, CSS y JavaScript puros.
   grosor junto al deslizador y tres tipos de papel por nota: liso, cuadrícula
   y rayas (el borrador revela el papel intacto). Las notas se guardan como
   trazos vectoriales en IndexedDB con miniatura automática.
+- **Texto en notas**: además de escribir a mano, la herramienta de texto permite
+  tocar el lienzo y teclear, eligiendo entre cuatro tipografías (redonda,
+  clásica, máquina y manuscrita), tamaño y color. Los textos se pueden mover,
+  reeditar tocándolos y se guardan con la nota.
 - **Listas de pendientes**: además de las tareas sueltas, puedes crear listas
   con nombre (Compras, Escuela…) desde la vista Tareas; cada tarea puede
   pertenecer a una lista y conservar fecha, prioridad y recordatorio.

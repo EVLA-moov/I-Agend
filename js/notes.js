@@ -152,8 +152,10 @@ window.addEventListener("resize", () => {
 
 function abrirEditor(nota) {
   notaActual = nota;
-  trazos = (nota.trazos || []).map(t => ({ ...t, puntos: [...t.puntos] }));
+  // Los textos e imágenes no tienen 'puntos'; copiar solo cuando existan
+  trazos = (nota.trazos || []).map(t => ({ ...t, puntos: t.puntos ? [...t.puntos] : undefined }));
   rehacer = [];
+  if (window.resetTexto) window.resetTexto();
   document.getElementById("ed-titulo").value = nota.titulo || "";
   aplicarPapel();
   editor.classList.remove("hidden");
@@ -162,6 +164,7 @@ function abrirEditor(nota) {
 }
 
 document.getElementById("ed-volver").addEventListener("click", async () => {
+  if (window.confirmarTexto) window.confirmarTexto();  // no perder texto sin confirmar
   await guardarNota();
   editor.classList.add("hidden");
   document.body.classList.remove("editando-nota");
@@ -205,7 +208,18 @@ const HERRAMIENTAS = [
   ["dashed", "Punteada", "punteada"],
   ["marker", "Subrayador", "subrayador"]
 ];
-let herramientaDibujo = "pen";  // último estilo de dibujo (para volver del borrador)
+let herramientaDibujo = "pen";  // último estilo de dibujo (para volver del borrador/texto)
+let refrescarBotonesHerramienta = () => {};  // lo define initHerramientas
+
+// Fuentes de la herramienta de texto (todas del sistema, funcionan sin internet).
+// Definidas aquí arriba porque initTexto (más abajo) las usa al cargar.
+const FUENTES = {
+  redonda: 'ui-rounded, -apple-system, "Segoe UI", system-ui, sans-serif',
+  clasica: 'Georgia, "Times New Roman", "Noto Serif", serif',
+  maquina: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+  manuscrita: '"Snell Roundhand", "Segoe Script", "Bradley Hand", cursive'
+};
+const INTERLINEA = 1.25;
 
 // Si un popover se sale por el borde derecho, recorrerlo hacia adentro
 function ajustarPopover(pop) {
@@ -224,16 +238,20 @@ function ajustarPopover(pop) {
   if (!btn || !pop || !grid || !eraserBtn) return;
 
   const nombreEl = document.getElementById("ed-tool-nombre");
+  const textBtn = document.getElementById("ed-text-btn");
   function actualizar() {
     const def = HERRAMIENTAS.find(h => h[0] === herramientaDibujo);
     icn.setAttribute("href", "#i-" + def[2]);
     if (nombreEl) nombreEl.textContent = def[1];
     btn.title = "Estilo de trazo: " + def[1];
-    btn.classList.toggle("active", herramienta !== "eraser");
+    const esDibujo = herramienta !== "eraser" && herramienta !== "text";
+    btn.classList.toggle("active", esDibujo);
     eraserBtn.classList.toggle("active", herramienta === "eraser");
+    if (textBtn) textBtn.classList.toggle("active", herramienta === "text");
     [...grid.children].forEach(el =>
       el.classList.toggle("sel", el.dataset.tool === herramientaDibujo));
   }
+  refrescarBotonesHerramienta = actualizar;
 
   HERRAMIENTAS.forEach(([tool, nombre, icono]) => {
     const el = document.createElement("button");
@@ -242,6 +260,7 @@ function ajustarPopover(pop) {
     el.dataset.tool = tool;
     el.innerHTML = `<svg class="icn"><use href="#i-${icono}"/></svg><span>${nombre}</span>`;
     el.addEventListener("click", () => {
+      if (window.confirmarTexto) window.confirmarTexto();
       herramientaDibujo = tool;
       herramienta = tool;
       pop.classList.add("hidden");
@@ -252,8 +271,9 @@ function ajustarPopover(pop) {
 
   btn.addEventListener("click", ev => {
     ev.stopPropagation();
-    // Tocar el botón de estilo también sale del modo borrador
-    if (herramienta === "eraser") herramienta = herramientaDibujo;
+    if (window.confirmarTexto) window.confirmarTexto();
+    // Tocar el botón de estilo también sale del modo borrador o texto
+    if (herramienta === "eraser" || herramienta === "text") herramienta = herramientaDibujo;
     const abierto = !pop.classList.contains("hidden");
     pop.classList.toggle("hidden", abierto);
     if (!abierto) ajustarPopover(pop);
@@ -261,6 +281,7 @@ function ajustarPopover(pop) {
   });
 
   eraserBtn.addEventListener("click", () => {
+    if (window.confirmarTexto) window.confirmarTexto();
     herramienta = herramienta === "eraser" ? herramientaDibujo : "eraser";
     pop.classList.add("hidden");
     actualizar();
@@ -271,6 +292,152 @@ function ajustarPopover(pop) {
   });
 
   actualizar();
+})();
+
+// ---------- Herramienta de texto (cuadros de texto con fuente) ----------
+(function initTexto() {
+  const textBtn = document.getElementById("ed-text-btn");
+  const overlay = document.getElementById("text-overlay");
+  const ta = document.getElementById("text-input");
+  const fuentesCont = document.getElementById("text-fuentes");
+  const sizeInput = document.getElementById("text-size");
+  const wrap = document.querySelector(".editor-canvas-wrap");
+  if (!textBtn || !overlay || !ta) return;
+
+  let fuenteSel = "redonda";
+  let editandoOriginal = null;  // trazo reeditado (para restaurar si cancela)
+
+  Object.keys(FUENTES).forEach(key => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "text-fuente" + (key === fuenteSel ? " sel" : "");
+    b.dataset.f = key;
+    b.textContent = "Aa";
+    b.style.fontFamily = FUENTES[key];
+    b.addEventListener("click", () => {
+      fuenteSel = key;
+      [...fuentesCont.children].forEach(c => c.classList.toggle("sel", c.dataset.f === key));
+      aplicarEstiloTA();
+      ta.focus();
+    });
+    fuentesCont.appendChild(b);
+  });
+
+  const colorActual = () => document.getElementById("ed-color").value;
+  function autoAlto() { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+  function aplicarEstiloTA() {
+    ta.style.fontFamily = FUENTES[fuenteSel];
+    ta.style.fontSize = sizeInput.value + "px";
+    ta.style.lineHeight = INTERLINEA;
+    ta.style.color = colorActual();
+    autoAlto();
+  }
+  ta.addEventListener("input", autoAlto);
+  sizeInput.addEventListener("input", aplicarEstiloTA);
+  document.getElementById("ed-color").addEventListener("input", () => {
+    if (!overlay.classList.contains("hidden")) ta.style.color = colorActual();
+  });
+
+  const overlayAbierto = () => !overlay.classList.contains("hidden");
+
+  function abrirOverlay(x, y, existente) {
+    editandoOriginal = existente || null;
+    fuenteSel = existente ? existente.font : fuenteSel;
+    [...fuentesCont.children].forEach(c => c.classList.toggle("sel", c.dataset.f === fuenteSel));
+    sizeInput.value = existente ? existente.size : (sizeInput.value || 30);
+    ta.value = existente ? existente.text : "";
+    overlay.style.left = Math.max(4, x - 6) + "px";
+    overlay.style.top = Math.max(4, y - 4) + "px";
+    overlay.classList.remove("hidden");
+    aplicarEstiloTA();
+    setTimeout(() => ta.focus(), 30);
+  }
+
+  function medir(text, size, fkey) {
+    ctx.save();
+    ctx.font = `${size}px ${FUENTES[fkey]}`;
+    let w = 0;
+    text.split("\n").forEach(l => { w = Math.max(w, ctx.measureText(l).width); });
+    ctx.restore();
+    return { w, h: text.split("\n").length * size * INTERLINEA };
+  }
+
+  function confirmar() {
+    if (!overlayAbierto()) return;
+    const text = ta.value.replace(/\s+$/, "");
+    // Leer la posición ANTES de ocultar (un elemento oculto da rect 0,0)
+    const taR = ta.getBoundingClientRect();
+    const cR = canvas.getBoundingClientRect();
+    overlay.classList.add("hidden");
+    if (text) {
+      const x = taR.left - cR.left + 6;   // padding izq del textarea
+      const y = taR.top - cR.top + 4;     // padding sup
+      const size = Number(sizeInput.value);
+      const { w, h } = medir(text, size, fuenteSel);
+      trazos.push({ tool: "text", x, y, text, font: fuenteSel, size, color: colorActual(), w, h });
+      rehacer = [];
+      redibujar();
+      programarGuardado();
+    } else if (editandoOriginal) {
+      redibujar();          // se vació un texto existente = eliminarlo
+      programarGuardado();
+    }
+    editandoOriginal = null;
+  }
+  function cancelar() {
+    if (!overlayAbierto()) return;
+    overlay.classList.add("hidden");
+    if (editandoOriginal) { trazos.push(editandoOriginal); redibujar(); }
+    editandoOriginal = null;
+  }
+  window.confirmarTexto = confirmar;
+  window.resetTexto = () => { overlay.classList.add("hidden"); editandoOriginal = null; };
+
+  document.getElementById("text-ok").addEventListener("click", confirmar);
+  document.getElementById("text-cancelar").addEventListener("click", cancelar);
+
+  // Colocar / editar por toque en el lienzo
+  window.manejarTapTexto = (p) => {
+    if (overlayAbierto()) { confirmar(); return; }
+    for (let i = trazos.length - 1; i >= 0; i--) {
+      const t = trazos[i];
+      if (t.tool === "text" && p.x >= t.x - 4 && p.x <= t.x + t.w + 4 &&
+          p.y >= t.y - 4 && p.y <= t.y + t.h + 4) {
+        trazos.splice(i, 1);
+        redibujar();
+        abrirOverlay(t.x, t.y, t);
+        return;
+      }
+    }
+    abrirOverlay(p.x, p.y, null);
+  };
+
+  textBtn.addEventListener("click", () => {
+    if (herramienta === "text") {
+      confirmar();
+      herramienta = herramientaDibujo;
+    } else {
+      herramienta = "text";
+    }
+    refrescarBotonesHerramienta();
+  });
+
+  // Arrastrar la ventana por el asa
+  const mover = document.getElementById("text-mover");
+  let arr = null;
+  mover.addEventListener("pointerdown", ev => {
+    ev.preventDefault();
+    const r = overlay.getBoundingClientRect();
+    arr = { dx: ev.clientX - r.left, dy: ev.clientY - r.top };
+    try { mover.setPointerCapture(ev.pointerId); } catch {}
+  });
+  mover.addEventListener("pointermove", ev => {
+    if (!arr) return;
+    const wr = wrap.getBoundingClientRect();
+    overlay.style.left = Math.max(2, ev.clientX - wr.left - arr.dx) + "px";
+    overlay.style.top = Math.max(2, ev.clientY - wr.top - arr.dy) + "px";
+  });
+  mover.addEventListener("pointerup", () => { arr = null; });
 })();
 
 // ---------- Tipo de papel (liso / cuadrícula / rayas) ----------
@@ -365,6 +532,12 @@ function pintarLive() {
 }
 
 canvas.addEventListener("pointerdown", ev => {
+  // En modo texto, tocar el lienzo coloca/edita un cuadro de texto (no dibuja)
+  if (herramienta === "text") {
+    ev.preventDefault();
+    if (window.manejarTapTexto) window.manejarTapTexto(puntoDesdeEvento(ev));
+    return;
+  }
   if (!permitido(ev)) return;
   ev.preventDefault();
   try { canvas.setPointerCapture(ev.pointerId); } catch { /* algunos entornos no lo soportan */ }
@@ -489,12 +662,25 @@ function trazarRuta(c, pts, ancho, dx = 0, dy = 0) {
 
 const presionMedia = pts => pts.reduce((s, p) => s + p.p, 0) / pts.length;
 
+function dibujarTexto(c, t) {
+  c.save();
+  c.globalAlpha = 1;
+  c.globalCompositeOperation = "source-over";
+  c.fillStyle = t.color;
+  c.textBaseline = "top";
+  c.font = `${t.size}px ${FUENTES[t.font] || FUENTES.redonda}`;
+  const lh = t.size * INTERLINEA;
+  (t.text || "").split("\n").forEach((ln, i) => c.fillText(ln, t.x, t.y + i * lh));
+  c.restore();
+}
+
 function dibujarTrazo(c, t) {
   if (t.tool === "image") {
     const img = imagenDe(t.dataUrl);
     if (img.complete && img.naturalWidth) c.drawImage(img, t.x, t.y, t.w, t.h);
     return;
   }
+  if (t.tool === "text") { dibujarTexto(c, t); return; }
   const pts = t.puntos;
   if (pts.length < 2) return;
 

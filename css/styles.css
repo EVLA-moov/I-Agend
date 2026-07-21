@@ -767,6 +767,57 @@ button { font-family: inherit; }
   cursor: crosshair;
 }
 #ed-canvas-live { pointer-events: none; }
+
+/* ---------- Herramienta de texto ---------- */
+.text-overlay {
+  position: absolute;
+  z-index: 6;
+  min-width: 180px;
+  max-width: min(90%, 460px);
+}
+.text-overlay textarea {
+  display: block;
+  width: 100%;
+  min-width: 120px;
+  border: 1.5px dashed var(--accent);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, .7);
+  padding: 4px 6px;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  color: inherit;              /* el color lo fija el JS (color del trazo) */
+  line-height: 1.25;
+}
+.text-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;   /* la barra va DEBAJO del cuadro para que el texto quede donde tocas */
+  padding: 7px 9px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid var(--vidrio-borde);
+  border-radius: 14px;
+  box-shadow: var(--shadow-flot);
+}
+.text-mover { cursor: grab; color: var(--muted); font-size: 1.1rem; touch-action: none; user-select: none; padding: 0 2px; }
+.text-fuentes { display: flex; gap: 5px; }
+.text-fuente {
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  border-radius: 9px;
+  padding: 5px 9px;
+  font-size: .9rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.text-fuente.sel { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.text-size-ctrl { display: flex; align-items: center; gap: 5px; font-weight: 800; color: var(--muted); font-size: .8rem; }
+.text-size-ctrl input { width: 74px; accent-color: var(--accent); }
+.text-bar .btn-ghost, .text-bar .btn-primary { padding: 7px 13px; font-size: .84rem; }
 /* Con el editor abierto, la aurora del fondo queda tapada: pausarla libera GPU
    y baja la latencia del Pencil */
 body.editando-nota::before { animation-play-state: paused; }

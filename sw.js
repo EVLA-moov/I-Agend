@@ -1,5 +1,5 @@
 /* IRIS — service worker: deja la app disponible sin conexión */
-const CACHE = "iris-v15";
+const CACHE = "iris-v16";
 const ARCHIVOS = [
   ".",
   "index.html",

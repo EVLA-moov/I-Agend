@@ -141,6 +141,7 @@
           </div>
         </div>
         <button type="button" id="ed-eraser-btn" class="tool" title="Borrador"><svg class="icn"><use href="#i-borrador"/></svg></button>
+        <button type="button" id="ed-text-btn" class="tool" title="Agregar texto"><svg class="icn"><use href="#i-texto"/></svg></button>
         <div class="color-control">
           <button type="button" id="ed-color-btn" class="color-swatch-btn" aria-label="Color del trazo"></button>
           <input type="color" id="ed-color" value="#1a1a2e">
@@ -167,6 +168,18 @@
     <div class="editor-canvas-wrap">
       <canvas id="ed-canvas"></canvas>
       <canvas id="ed-canvas-live"></canvas>
+      <!-- Ventana flotante para escribir texto con fuente -->
+      <div id="text-overlay" class="text-overlay hidden">
+        <textarea id="text-input" rows="1" placeholder="Escribe…"
+          autocorrect="off" autocapitalize="sentences" spellcheck="false"></textarea>
+        <div class="text-bar">
+          <span class="text-mover" id="text-mover" title="Mover">⠿</span>
+          <div id="text-fuentes" class="text-fuentes"></div>
+          <label class="text-size-ctrl">A<input type="range" id="text-size" min="14" max="84" value="30"></label>
+          <button type="button" id="text-cancelar" class="btn-ghost">Cancelar</button>
+          <button type="button" id="text-ok" class="btn-primary">Listo</button>
+        </div>
+      </div>
     </div>
   </div>
 
