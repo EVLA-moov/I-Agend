@@ -20,6 +20,34 @@ const guardarListas = () => store.set("iris.listas", listas);
 
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+// Ventana propia para pedir texto (reemplaza prompt() nativo, que autocorrige
+// y no combina con el diseño). Devuelve una promesa con el texto o null.
+function pedirTexto({ titulo = "Nombre", placeholder = "", valor = "", ok = "Aceptar" } = {}) {
+  return new Promise(resolve => {
+    const modal = document.getElementById("modal-prompt");
+    const form = document.getElementById("prompt-form");
+    const input = document.getElementById("prompt-input");
+    document.getElementById("prompt-titulo").textContent = titulo;
+    document.getElementById("prompt-ok").textContent = ok;
+    input.placeholder = placeholder;
+    input.value = valor;
+    modal.classList.remove("hidden");
+    setTimeout(() => input.focus(), 50);
+
+    const cerrar = (resultado) => {
+      modal.classList.add("hidden");
+      form.onsubmit = null;
+      document.getElementById("prompt-cancelar").onclick = null;
+      modal.onclick = null;
+      resolve(resultado);
+    };
+    form.onsubmit = ev => { ev.preventDefault(); cerrar(input.value.trim() || null); };
+    document.getElementById("prompt-cancelar").onclick = () => cerrar(null);
+    modal.onclick = ev => { if (ev.target === modal) cerrar(null); };
+  });
+}
+window.pedirTexto = pedirTexto;
+
 // Crea un ícono SVG de la biblioteca de símbolos (#i-<nombre> en index.html)
 window.icono = function (nombre) {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -298,8 +326,12 @@ function renderListas() {
   const nueva = document.createElement("button");
   nueva.className = "chip";
   nueva.textContent = "＋ Lista";
-  nueva.addEventListener("click", () => {
-    const nombre = (prompt("Nombre de la nueva lista (ej. Compras):") || "").trim();
+  nueva.addEventListener("click", async () => {
+    const nombre = await pedirTexto({
+      titulo: "Nueva lista",
+      placeholder: "Ej. Compras",
+      ok: "Crear"
+    });
     if (!nombre) return;
     if (!listas.includes(nombre)) {
       listas.push(nombre);

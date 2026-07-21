@@ -223,9 +223,11 @@ function ajustarPopover(pop) {
   const icn = document.getElementById("ed-tool-icn");
   if (!btn || !pop || !grid || !eraserBtn) return;
 
+  const nombreEl = document.getElementById("ed-tool-nombre");
   function actualizar() {
     const def = HERRAMIENTAS.find(h => h[0] === herramientaDibujo);
     icn.setAttribute("href", "#i-" + def[2]);
+    if (nombreEl) nombreEl.textContent = def[1];
     btn.title = "Estilo de trazo: " + def[1];
     btn.classList.toggle("active", herramienta !== "eraser");
     eraserBtn.classList.toggle("active", herramienta === "eraser");

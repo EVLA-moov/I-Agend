@@ -685,6 +685,17 @@ button { font-family: inherit; }
 
 /* Popover de estilos de trazo */
 .tool-control { position: relative; display: inline-flex; }
+/* Botón del estilo activo: muestra ícono + nombre + flecha (así se ve que abre) */
+.tool-actual {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: .85rem;
+  font-weight: 700;
+}
+.tool-actual .chevron { width: .85em; height: .85em; opacity: .6; }
+#ed-tool-nombre { white-space: nowrap; }
 .tools-grid {
   display: grid;
   grid-template-columns: repeat(5, 66px);
@@ -784,7 +795,9 @@ body.editando-nota::before { animation-play-state: paused; }
 .modal {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  /* Encima del editor de notas (z 50) y sus popovers (z 60): las ventanas de
+     IA se abren desde dentro del editor y quedaban tapadas */
+  z-index: 90;
   background: rgba(22, 15, 45, .38);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -876,7 +889,7 @@ body.editando-nota::before { animation-play-state: paused; }
 
 .ajustes-desc { color: var(--muted); font-size: .88rem; line-height: 1.5; margin-bottom: 12px; }
 .ajustes-desc a { color: var(--accent); font-weight: 700; }
-.modal-box > input[type="password"], .modal-box > textarea {
+.modal-box > input[type="password"], .modal-box > input[type="text"], .modal-box > textarea {
   width: 100%;
   padding: 12px 14px;
   border-radius: 14px;
