@@ -1004,7 +1004,9 @@ body.editando-nota::before { animation-play-state: paused; }
   border: 1px solid rgba(255, 255, 255, .18);
   font-weight: 700;
   font-size: .92rem;
-  z-index: 60;
+  /* Por encima de las ventanas (z 90): un recordatorio que suene con un modal
+     abierto quedaba detrás y no se podía tocar */
+  z-index: 100;
   box-shadow: 0 10px 32px rgba(0, 0, 0, .3);
   max-width: 88vw;
   animation: subir .25s ease;

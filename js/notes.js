@@ -109,6 +109,7 @@ function nuevaNota() {
     trazos: [],
     thumb: "",
     papel: "liso",
+    nuncaGuardada: true,   // permite descartarla si se sale sin escribir nada
     actualizada: Date.now()
   });
 }
@@ -156,6 +157,10 @@ function abrirEditor(nota) {
   trazos = (nota.trazos || []).map(t => ({ ...t, puntos: t.puntos ? [...t.puntos] : undefined }));
   rehacer = [];
   if (window.resetTexto) window.resetTexto();
+  // Cada nota empieza en modo dibujo: heredar el borrador o el texto hacía
+  // creer que "el Pencil no dibuja"
+  herramienta = herramientaDibujo;
+  refrescarBotonesHerramienta();
   document.getElementById("ed-titulo").value = nota.titulo || "";
   aplicarPapel();
   editor.classList.remove("hidden");
@@ -174,8 +179,10 @@ document.getElementById("ed-volver").addEventListener("click", async () => {
 async function guardarNota() {
   if (!notaActual) return;
   const titulo = document.getElementById("ed-titulo").value.trim();
-  // No guardar notas totalmente vacías y sin título
-  if (!trazos.length && !titulo) return;
+  // Solo se descarta una nota NUEVA que quedó vacía. Si la nota ya existía,
+  // vaciarla con "Limpiar todo" sí debe guardarse (antes el borrado se perdía)
+  if (!trazos.length && !titulo && notaActual.nuncaGuardada) return;
+  delete notaActual.nuncaGuardada;
 
   // Miniatura
   const thumbCanvas = document.createElement("canvas");

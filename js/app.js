@@ -272,8 +272,24 @@ document.getElementById("form-quick-task").addEventListener("submit", ev => {
   const input = document.getElementById("quick-task-input");
   const titulo = input.value.trim();
   if (!titulo) return;
+
+  // La tarea nueva debe quedar VISIBLE con el filtro activo: si el filtro pide
+  // fecha, se la asignamos; si no encaja de ningún modo, volvemos a Pendientes
+  let fecha = "";
+  if (filtroTareas === "hoy") {
+    fecha = hoyISO();
+  } else if (filtroTareas === "proximas") {
+    const m = new Date();
+    m.setDate(m.getDate() + 1);
+    fecha = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}-${String(m.getDate()).padStart(2, "0")}`;
+  } else if (filtroTareas === "completadas") {
+    filtroTareas = "pendientes";   // una tarea nueva nunca está completada
+    document.querySelectorAll("#task-filters .chip").forEach(c =>
+      c.classList.toggle("active", c.dataset.filter === "pendientes"));
+  }
+
   tareas.push({
-    id: uid(), titulo, fecha: "", hora: "", prioridad: 0, recordar: false,
+    id: uid(), titulo, fecha, hora: "", prioridad: 0, recordar: false,
     notas: "", hecha: false, avisada: false,
     lista: listaSel === "todas" ? "" : listaSel
   });
@@ -675,25 +691,46 @@ function actualizarBadge() {
   else navigator.clearAppBadge().catch(() => {});
 }
 
+// ¿Ya venció? Cuenta lo de días pasados, no solo lo de hoy: si la app estaba
+// cerrada a la hora del aviso, el recordatorio debe sonar al volver
+function yaVencio(fecha, hora, hoy, horaAhora) {
+  if (!fecha) return false;
+  if (fecha < hoy) return true;                       // de días anteriores
+  return fecha === hoy && (!hora || hora <= horaAhora);
+}
+
 function revisarRecordatorios() {
   const ahora = new Date();
   const hoy = hoyISO();
   const horaAhora = `${String(ahora.getHours()).padStart(2, "0")}:${String(ahora.getMinutes()).padStart(2, "0")}`;
 
+  const vencidos = [];
   tareas.forEach(t => {
-    if (t.recordar && !t.avisada && !t.hecha && t.fecha === hoy && t.hora && t.hora <= horaAhora) {
+    if (t.recordar && !t.avisada && !t.hecha && t.hora && yaVencio(t.fecha, t.hora, hoy, horaAhora)) {
       t.avisada = true;
-      notificar("Tarea pendiente", t.titulo);
-      guardarTareas();
+      vencidos.push({ tipo: "tarea", titulo: t.titulo, atrasado: t.fecha < hoy });
     }
   });
   eventos.forEach(e => {
-    if (e.recordar && !e.avisado && e.fecha === hoy && e.hora && e.hora <= horaAhora) {
+    if (e.recordar && !e.avisado && e.hora && yaVencio(e.fecha, e.hora, hoy, horaAhora)) {
       e.avisado = true;
-      notificar("Evento ahora", e.titulo);
-      guardarEventos();
+      vencidos.push({ tipo: "evento", titulo: e.titulo, atrasado: e.fecha < hoy });
     }
   });
+
+  if (vencidos.length) {
+    guardarTareas();
+    guardarEventos();
+    if (vencidos.length === 1) {
+      const v = vencidos[0];
+      notificar(v.atrasado ? "Recordatorio atrasado"
+        : (v.tipo === "tarea" ? "Tarea pendiente" : "Evento ahora"), v.titulo);
+    } else {
+      // Varios a la vez (típico al volver a abrir la app): un solo resumen
+      notificar(`Tienes ${vencidos.length} recordatorios pendientes`,
+        vencidos.map(v => v.titulo).join(" · "));
+    }
+  }
   actualizarBadge();
 }
 setInterval(revisarRecordatorios, 30000);
