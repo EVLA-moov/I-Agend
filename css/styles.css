@@ -291,7 +291,31 @@ button { font-family: inherit; }
 }
 
 /* ---------- Tareas ---------- */
+/* Captura rápida: el botón hace evidente cómo se guarda (antes solo con Enter) */
+.quick-add { display: flex; align-items: center; gap: 9px; }
+.quick-add-btn {
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, .4);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .4), rgba(255, 255, 255, .07) 48%, rgba(255, 255, 255, 0) 64%),
+    var(--grad);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: .92rem;
+  padding: 13px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5),
+    -6px 8px 18px -8px rgba(109, 92, 232, .55),
+    6px 8px 18px -8px rgba(201, 79, 208, .5);
+  transition: transform .12s ease, opacity .15s ease;
+}
+.quick-add-btn:active { transform: scale(.95); }
+
 .quick-add input {
+  flex: 1;
+  min-width: 0;
   width: 100%;
   padding: 14px 18px;
   border-radius: 999px;
@@ -587,6 +611,10 @@ button { font-family: inherit; }
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  /* El desenfoque de abajo crea contexto de apilamiento y encerraba el z-index
+     de los popovers (estilos/color): el lienzo los tapaba a media altura */
+  position: relative;
+  z-index: 20;
   padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
   background: color-mix(in srgb, var(--surface) 75%, transparent);
   backdrop-filter: blur(16px) saturate(1.4);
